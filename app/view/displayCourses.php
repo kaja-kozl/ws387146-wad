@@ -1,11 +1,20 @@
-<h1>Courses</h1>
+<style>
+    .invalid-input {
+        border: 2px solid red;
+    }
+</style>
 
-<?php if (!empty($params)): ?>
-    <ul>
-        <?php foreach ($courses as $course): ?>
-            <li>
-                <h2><?php echo htmlspecialchars($course['name']); ?></h2>
-                <p><?php echo htmlspecialchars($course['description']); ?></p>
-            </li>
-        <?php endforeach; endif; ?>
-    </ul>
+<h1>Create a course</h1>
+<?php 
+// Creates a new CourseModel if none is passed from the controller
+if (!isset($course)) {
+    $course = new \app\model\CourseModel();
+}
+$form = \app\core\form\Form::begin('', "post"); ?>
+    <?php echo $form->field($course, 'courseTitle') ?>
+    <?php echo $form->field($course, 'courseDesc') ?>
+    <?php echo $form->field($course, 'dateTime')->dateField() ?>
+    <?php echo $form->field($course, 'maxAttendees') ?>
+    <?php echo $form->field($course, 'lecturer') ?>
+    <input type="submit" value="Create Course">
+<?php $form->end(); ?>

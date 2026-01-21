@@ -1,22 +1,27 @@
 <?php
+namespace app\model;
+use app\core\Model;
 
-class Course {
-  public $uid;
-  public $courseTitle;
-  public $dateTime;
-  public $duration;
-  public $maxAttendees;
-  public $courseDesc;
-  public $lecturer;
+class CourseModel extends Model {
+  public $uid = '';
+  public $courseTitle = '';
+  public $dateTime = '';
+  public $maxAttendees = '';
+  public $courseDesc = '';
+  public $lecturer = '';
 
-  function __construct($uid, $courseTitle, $dateTime, $duration, $maxAttendees, $courseDesc) {
-    $this->uid = $uid;
-    $this->courseTitle = $courseTitle;
-    $this->dateTime = $dateTime;
-    $this->duration = $duration;
-    $this->maxAttendees = $maxAttendees;
-    $this->courseDesc = $courseDesc;
-  }
+    public function rules(): array 
+    {
+        return [
+            'courseTitle' => [self::RULE_REQUIRED, [self::RULE_MAX, 'max' => 32]],
+            'dateTime' => [self::RULE_REQUIRED],
+            'duration' => [self::RULE_REQUIRED],
+            'maxAttendees' => [self::RULE_REQUIRED],
+            'courseDesc' => [self::RULE_REQUIRED, [self::RULE_MAX, 'max' => 255]],
+            'lecturer' => [self::RULE_REQUIRED]
+        ];
+    }
+
     function getCourse() {
         return $this->courseTitle;
     }

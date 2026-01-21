@@ -52,8 +52,7 @@ abstract class Model {
                 }
             }
         }
-        //return empty($this->errors);
-        return true;
+        return empty($this->errors);
     }
 
     public function addError(string $attribute, string $rule, $params = []) {
@@ -77,6 +76,10 @@ abstract class Model {
     public function hasError($attribute)
     {
         return $this->errors[$attribute] ?? false;
+    }
+
+    public function getFirstError($attribute) {
+        return $this->errors[$attribute][0] ?? false;
     }
 }
 

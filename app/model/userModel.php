@@ -3,24 +3,15 @@ namespace app\model;
 use app\core\Model;
 
 class UserModel extends Model {
-  public $uid;
-  public $email;
-  public $firstName;
-  public $lastName;
-  public $jobTitle;
-  public $accessLevel;
-  public $password;
-  public $confirmPassword;
-
-//   function __construct($uid, $email, $firstName, $lastName, $jobTitle, $accessLevel) {
-//     $this->uid = $uid;
-//     $this->email = $email;
-//     $this->firstName = $firstName;
-//     $this->lastName = $lastName;
-//     $this->jobTitle = $jobTitle;
-//     $this->accessLevel = $accessLevel;
-//   }
-
+  public string $uid = '';
+  public string $email = '';
+  public string $firstName = '';
+  public string $lastName = '';
+  public string $jobTitle = '';
+  public string $accessLevel = '';
+  public string $password = '';
+  public string $confirmPassword = '';
+  
     public function rules(): array 
     {
         return [

@@ -18,8 +18,7 @@ class AuthController extends Controller {
                 //return 'Handling create account request';
                 # Validate user input & register account if it has passed
                 if ($userModel->validate() && $userModel->createUser()) {
-                    var_dump($userModel->errors);
-                    return 'Successfully created a user';
+                    echo 'Successfully created a user';
                 }
                 return $this->render('displayLogin', [
                     'model' => $userModel

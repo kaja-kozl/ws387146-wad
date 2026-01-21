@@ -17,6 +17,7 @@ $app->router->get('/', function() {
 });
 
 $app->router->get('/courses', [SiteController::class, 'courses']);
+$app->router->post('/courses', [SiteController::class, 'courses']);
 
 $app->router->get('/profile', [SiteController::class, 'self']);
 
