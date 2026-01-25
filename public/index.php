@@ -1,15 +1,25 @@
 <?php
 // Front controller / Router
-
-# Enables declaring a defined class from its namespace before using it in the project (no need for require_once for each class file)
-require_once __DIR__ . '/../vendor/autoload.php';
-
 use app\controller\AuthController;
 use app\core\Application;
 use app\controller\SiteController;
 
+# Enables declaring a defined class from its namespace before using it in the project (no need for require_once for each class file)
+require_once __DIR__ . '/../vendor/autoload.php';
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
+
+$config = [
+    'db' => [
+        'servername' => $_ENV['DB_HOST'],
+        'db_name' => $_ENV['DB_NAME'],
+        'username' => $_ENV['DB_USER'],
+        'password' => $_ENV['DB_PASS']
+    ]
+];
+
 # Creates a new instance of application for each user request
-$app = new Application(dirname(__DIR__));
+$app = new Application(dirname(__DIR__), $config);
 
 # See router's GET method... if user visits '/', execute the following method from the SiteController class
 $app->router->get('/', function() {

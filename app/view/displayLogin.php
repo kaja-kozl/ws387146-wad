@@ -18,13 +18,4 @@ $form = \app\core\form\Form::begin('', "post");
     <input type="submit" value="Login">
 <?php $form->end(); ?>
 
-<h1>Create Account</h1>
-<?php $form = \app\core\form\Form::begin('', "post"); ?>
-    <?php echo $form->field($model, 'email') ?>
-    <?php echo $form->field($model, 'password')->passwordField() ?>
-    <?php echo $form->field($model, 'confirmPassword')->passwordField() ?>
-    <?php echo $form->field($model, 'firstName') ?>
-    <?php echo $form->field($model, 'lastName') ?>
-    <?php echo $form->field($model, 'jobTitle') ?>
-    <input type="submit" value="Create Account">
-<?php $form->end(); ?>
+

@@ -18,3 +18,9 @@ $form = \app\core\form\Form::begin('', "post"); ?>
     <?php echo $form->field($course, 'lecturer') ?>
     <input type="submit" value="Create Course">
 <?php $form->end(); ?>
+
+<h1>Edit a course</h1>
+
+<h1>Add a user on a course</h1>
+
+<h1>Remove user from a course</h1>
