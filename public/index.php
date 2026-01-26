@@ -32,6 +32,7 @@ $app->router->post('/courses', [SiteController::class, 'courses']);
 $app->router->get('/profile', [SiteController::class, 'self']);
 
 $app->router->get('/users', [SiteController::class, 'users']);
+$app->router->post('/users', [AuthController::class, 'users']);
 
 $app->router->get('/login', [AuthController::class, 'login']);
 $app->router->post('/login', [AuthController::class, 'login']);

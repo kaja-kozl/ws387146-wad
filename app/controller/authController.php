@@ -1,35 +1,40 @@
 <?php
 namespace app\controller;
 use app\core\Controller;
+use app\core\Application;
 use app\core\Request;
 use app\model\UserModel;
 
 class AuthController extends Controller {
+    
+    # User is logging in
     public function login(Request $request) {
         $this->setLayout('auth');
 
         if ($request->isPost()) {
             $userModel = new UserModel();
-            
-            # Check if user is logging in or the create account
-            if (sizeof($request->getBody()) === 6) {
-                $userModel->loadData($request->getBody());
-                # Handling create account request
-                //return 'Handling create account request';
-                # Validate user input & register account if it has passed
-                if ($userModel->validate() && $userModel->createUser()) {
-                    echo 'Successfully created a user';
-                }
-                return $this->render('displayLogin', [
-                    'model' => $userModel
-                ]);
-            } else {
-                # Handling login request
-                return 'Handling login request';
-            }
+            # Handling login request
+            return 'Handling login request';
         }
 
         return $this->render('displayLogin');
+    }
+
+    # User is creating an account
+    public function users(Request $request) {
+        if ($request->isPost()) {
+            $userModel = new UserModel();
+                $userModel->loadData($request->getBody());
+                # Validate user input & register account if it has passed
+                if ($userModel->validate() && $userModel->save()) {
+                    Application::$app->session->setFlash('success', 'User created successfully');
+                }
+                return $this->render('displayUsers', [
+                    'model' => $userModel
+                ]);
+        }
+
+        return $this->render('displayUsers');
     }
 }
 
