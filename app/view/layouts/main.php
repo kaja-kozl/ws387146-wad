@@ -9,7 +9,7 @@ use app\core\Application;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title><?php echo $this->title ?></title>
     <style>
         body {
             background-repeat: no-repeat;

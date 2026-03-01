@@ -1,3 +1,5 @@
+<?php $this->title = 'Courses'; ?>
+
 <style>
     .invalid-input {
         border: 2px solid red;
@@ -10,12 +12,13 @@
 if (!isset($course)) {
     $course = new \app\model\CourseModel();
 }
-$form = \app\core\form\Form::begin('', "post"); ?>
+$form = \app\core\form\Form::begin('courses', "post"); ?>
     <?php echo $form->field($course, 'courseTitle') ?>
     <?php echo $form->field($course, 'courseDesc') ?>
     <?php echo $form->field($course, 'dateTime')->dateField() ?>
+    <?php echo $form->field($course, 'duration') ?>
     <?php echo $form->field($course, 'maxAttendees') ?>
-    <?php echo $form->field($course, 'lecturer') ?>
+    <?php echo $form->field($course, 'lecturer')->dropDownField() ?> <!-- Add all the areas -->
     <input type="submit" value="Create Course">
 <?php $form->end(); ?>
 

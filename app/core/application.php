@@ -2,6 +2,8 @@
 
 namespace app\core;
 use app\core\Controller;
+use app\core\View;
+use app\model\UserModel;
 
 class Application
 {
@@ -17,7 +19,8 @@ class Application
     public Database $db;
     public static ?Application $app = null;
     public ?Controller $controller = null;
-    public ?DbModel $user; # ? suggests that this attribute may be NULL
+    public ?UserModel $user; # ? suggests that this attribute may be NULL3
+    public View $view;
 
     public function __construct($rootPath, array $config = []) {
         $this->userClass = $config['userClass'];
@@ -28,6 +31,8 @@ class Application
         $this->response = new Response();
         $this->session = new Session();
         $this->router = new Router($this->request, $this->response);
+        $this->view = new View();
+
         $this->db = new Database($config['db']);
 
         # This stores the User class with the appopriate object if the user has logged in
@@ -53,7 +58,7 @@ class Application
             echo $this->router->resolve();
         } catch (\Exception $e) {
             $this->response->setStatusCode($e->getCode());
-            echo $this->router->renderView('_error', [
+            echo $this->view->renderView('_error', [
                 'exception' => $e
             ]);
         }
@@ -70,7 +75,7 @@ class Application
     }
 
     # Saving the user in the session attribute
-    public function login(DbModel $user): bool
+    public function login(UserModel $user): bool
     {
         $this->user = $user;
         $primaryKey = $user->primaryKey();

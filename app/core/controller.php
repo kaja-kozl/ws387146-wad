@@ -14,7 +14,7 @@ class Controller {
         self::$controller = $this;
     }
     public function render($view, $params = []) {
-        return Application::$app->router->renderView($view, $params);
+        return Application::$app->view->renderView($view, $params);
     }
 
     public function setLayout($layout) {

@@ -1,3 +1,5 @@
+<?php $this->title = 'Profile'; ?>
+
 <style>
 .invalid-input {
     border-color: #dc3545;
