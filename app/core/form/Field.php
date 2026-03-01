@@ -3,6 +3,7 @@ namespace app\core\form;
 use app\core\Model;
 
 class Field {
+    # Lists types of fields
     public const TYPE_TEXT = 'text';
     public const TYPE_PASSWORD = 'password';
     public const TYPE_NUMBER = 'number';
@@ -15,7 +16,7 @@ class Field {
     public string $attribute;
     public array $options = [];
 
-    public function __construct(\app\core\Model $model, string $attribute) {
+    public function __construct(Model $model, string $attribute) {
         $this->type = self::TYPE_TEXT;
         $this->model = $model;
         $this->attribute = $attribute;
@@ -28,6 +29,7 @@ class Field {
         return $this->renderInput();
     }
 
+    # Boilerplate for how the field is to be rendered on the page
     private function renderInput() {
         $class = $this->model->hasError($this->attribute) ? 'invalid-input' : '';
         return sprintf('
@@ -77,6 +79,7 @@ class Field {
         );
     }
 
+    # If fields required are of a different, call this when creating the form
     public function passwordField() {
         $this->type = self::TYPE_PASSWORD;
         return $this;

@@ -9,7 +9,8 @@ abstract class Model {
     public const RULE_MATCH = 'match';
     public const RULE_UNIQUE = 'unique';
 
-    # Loads data from an array and assigns valid variables as properties in an object
+    # Loads data from an array and assigns valid variables as attributes in an object
+    # Used with form inputs
     public function loadData($data) {
         foreach ($data as $key => $value) {
             if (property_exists($this, $key)) {
@@ -18,14 +19,17 @@ abstract class Model {
         }
     }
 
+    # Demonstrates how form fields should be labelled (see child classes)
     public function labels(): array {
         return [];
     }
 
+    # Demonstrates which rules apply to which fields
     abstract public function rules(): array;
 
     public array $errors = [];
 
+    # All rules and how they are validated
     public function validate() {
         foreach ($this->rules() as $attribute => $rules) {
             $value = $this->{$attribute};
@@ -72,11 +76,16 @@ abstract class Model {
         return empty($this->errors);
     }
 
-    public function addError(string $attribute, string $rule, $params = []) {
+    # Adds error messages when rules are not met on forms
+    private function addError(string $attribute, string $rule, $params = []) {
         $message = $this->errorMessages()[$rule] ?? '';
         foreach ($params as $key => $value) {
             $message = str_replace("{{$key}}", $value, $message);
         }
+        $this->errors[$attribute][] = $message;
+    }
+
+    public function addError_public(string $attribute, string $message) {
         $this->errors[$attribute][] = $message;
     }
 

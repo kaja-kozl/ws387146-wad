@@ -1,8 +1,8 @@
 <?php
 namespace app\model;
-use app\core\dbModel;
+use app\core\User;
 
-class UserModel extends dbModel {
+class UserModel extends User {
   public string $uid = '';
   public string $email = '';
   public string $firstName = '';
@@ -12,12 +12,18 @@ class UserModel extends dbModel {
   public string $password = '';
   public string $confirmPassword = '';
 
+    # Defines the models table properties
     public static function tableName(): string 
     {
         return 'users';
     }
 
-    public function attributes(): array 
+    public static function primaryKey(): string 
+    {
+        return 'uid';
+    }
+
+    public static function attributes(): array 
     {
         return ['email', 'firstName', 'lastName', 'jobTitle', 'accessLevel', 'password'];
     }
@@ -77,6 +83,10 @@ class UserModel extends dbModel {
             'jobTitle' => 'Job Title',
             'accessLevel' => 'Access Level'
         ];
+    }
+
+    public function getDisplayName(): string {
+        return $this->firstName . ' ' . $this->lastName;
     }
 }
 

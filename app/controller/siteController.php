@@ -23,6 +23,9 @@ class SiteController extends Controller {
         return $this->render('displaySelf');
     }
 
+    # User is on users page
+        # Displays users visible to permissions
+        # Enables creation of new users
     public function users() {
         return $this->render('displayUsers');
     }

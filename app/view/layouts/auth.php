@@ -1,5 +1,5 @@
 <?php
-// Header, footer, and other layout elements can go here as well as any common libraries
+use app\core\Application;
 
 ?>
 
@@ -9,9 +9,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Authentication</title>
+    <link rel="stylesheet" type="text/css" href="auth.css">
 </head>
+<style>
+    body {
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: 100% 100%;
+    }
+</style>
 <body>
-    <h1>Different NavBar</h1>
     {{content}}
 </body>
 </html>

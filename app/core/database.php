@@ -3,19 +3,43 @@ namespace app\core;
 use Dotenv\Dotenv;
 
 
-class Database { 
+class Database {
+    private array $config;
     public \PDO $pdo;
 
     public function __construct(array $config) {
-        $dsn = 'mysql:host=' . $config['servername'] . ';dbname=' . $config['db_name'];
-        $user = $config['username'];
-        $password = $config['password'];
-        $this->pdo = new \PDO($dsn, $user, $password);
-        $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $this->config = $config;
+        $this->connect();
     }
 
-    public function prepare($sql) {
-        return $this->pdo->prepare($sql);
+    private function connect(): void {
+        $dsn = 'mysql:host=' . $this->config['servername'] .
+               ';port=3306;dbname=' . $this->config['db_name'] .
+               ';charset=utf8mb4';
+
+        $this->pdo = new \PDO(
+            $dsn,
+            $this->config['username'],
+            $this->config['password'],
+            [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_EMULATE_PREPARES => false,
+                \PDO::ATTR_TIMEOUT => 5,
+            ]
+        );
+    }
+
+    public function prepare(string $sql) {
+        try {
+            return $this->pdo->prepare($sql);
+        } catch (\PDOException $e) {
+            // MySQL server has gone away
+            if ((int)$e->getCode() === 2006) {
+                $this->connect();
+                return $this->pdo->prepare($sql);
+            }
+            throw $e;
+        }
     }
 }
 ?>

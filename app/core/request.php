@@ -1,8 +1,10 @@
 <?php
 
 namespace app\core;
+
 class Request {
-    // Get the current path from the request and parse it
+
+    # Determine the current path of the request and parse it
     public function getPath() {
         $path = $_SERVER['REQUEST_URI'] ?? '/'; # Retrieve the URI from the server variable
         $position = strpos($path, '?'); # Find the position of the '?' character if any
@@ -14,6 +16,7 @@ class Request {
         }
     }
 
+    # Determine the method of a request and parse it
     public function method() {
         return $_SERVER['REQUEST_METHOD'] ?? 'GET'; # Determines the request method
     }

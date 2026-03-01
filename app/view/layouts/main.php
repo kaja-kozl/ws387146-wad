@@ -1,6 +1,7 @@
 <?php
 // Header, footer, and other layout elements can go here as well as any common libraries
 use app\core\Application;
+
 ?>
 
 <!DOCTYPE html>
@@ -9,9 +10,18 @@ use app\core\Application;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        body {
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: 100% 100%;
+        }
+    </style>
 </head>
 <body>
-    <h1>NavBar placeholder</h1>
+    <h1>NavBar placeholder</h1> <!--Remember to remove certain options if the user is not logged in-->
+    <h1> Username: <?php if (Application::$app->user) { echo Application::$app->user->getDisplayName(); } ?>
+    <a href="/logout">Logout</a>
 
     <div class="container"> 
         <?php 

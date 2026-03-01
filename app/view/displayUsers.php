@@ -5,7 +5,7 @@
 </style>
 
 <?php 
-// Creates a new UserModel if none is passed from the controller
+// Creates a new UserModel if none is passed from the controller - won't be needed as this page should not be accessible by a non-user
 if (!isset($model)) {
     $model = new \app\model\UserModel();
 }

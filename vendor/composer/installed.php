@@ -3,7 +3,7 @@
         'name' => 'darynazborovska/mvc',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '48e3026f7b2593e59ce44a629c7329b4a1216a7d',
+        'reference' => '3400fc55cf0ce39ec1ed621ae2cb769e07bf5252',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'darynazborovska/mvc' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '48e3026f7b2593e59ce44a629c7329b4a1216a7d',
+            'reference' => '3400fc55cf0ce39ec1ed621ae2cb769e07bf5252',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -10,6 +10,7 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 $config = [
+    'userClass' => \app\model\UserModel::class,
     'db' => [
         'servername' => $_ENV['DB_HOST'],
         'db_name' => $_ENV['DB_NAME'],
@@ -22,14 +23,13 @@ $config = [
 $app = new Application(dirname(__DIR__), $config);
 
 # See router's GET method... if user visits '/', execute the following method from the SiteController class
-$app->router->get('/', function() {
-    return 'Hello world';
-});
+$app->router->get('/', [AuthController::class, 'login']);
+$app->router->post('/', [AuthController::class, 'login']);
 
 $app->router->get('/courses', [SiteController::class, 'courses']);
 $app->router->post('/courses', [SiteController::class, 'courses']);
 
-$app->router->get('/profile', [SiteController::class, 'self']);
+$app->router->get('/profile', [AuthController::class, 'profile']);
 
 $app->router->get('/users', [SiteController::class, 'users']);
 $app->router->post('/users', [AuthController::class, 'users']);
@@ -37,6 +37,7 @@ $app->router->post('/users', [AuthController::class, 'users']);
 $app->router->get('/login', [AuthController::class, 'login']);
 $app->router->post('/login', [AuthController::class, 'login']);
 
+$app->router->get('/logout', [AuthController::class, 'logout']);
 # Actually creates the application and runs it
 $app->run();
 
