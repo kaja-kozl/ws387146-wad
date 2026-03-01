@@ -4,6 +4,7 @@ use app\core\Controller;
 use app\core\Application;
 use app\core\Request;
 use app\core\Response;
+use app\core\middlewares\AuthMiddleware;
 use app\model\UserModel;
 use app\model\LoginForm;
 
@@ -62,7 +63,7 @@ class AuthController extends Controller {
     }
 
     public function logout(Request $request, Response $response) {
-        Application::$app->logout;
+        Application::$app->logout();
         $response->redirect('/');
     }
 

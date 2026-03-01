@@ -7,7 +7,8 @@ class Controller {
 
     public static Controller $controller;
     public string $layout = 'main';
-    public array $middlewares = []; # Array of middleware classes from namespace \app\core\middlewares\BaseMiddleware[]
+    public string $action = '';
+    protected array $middlewares = []; # Array of middleware classes from namespace \app\core\middlewares\BaseMiddleware[]
 
     public function __construct() {
         self::$controller = $this;
@@ -22,6 +23,10 @@ class Controller {
 
     public function registerMiddleware(BaseMiddleware $middleware) {
         $this->middlewares[] = $middleware;
+    }
+
+    public function getMiddlewares(): array {
+        return $this->middlewares;
     }
 }
 

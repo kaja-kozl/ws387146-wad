@@ -2,6 +2,8 @@
 
 namespace app\core;
 use app\controllers;
+use app\core\exception\NotFoundException;
+
 class Router
 {
     public Request $request;
@@ -39,8 +41,7 @@ class Router
         
         # Error if no route found in the mapping
         if ($callback === false) {
-            $this->response->setStatusCode(404);
-            return $this->renderView('_404');
+            throw new NotFoundException();
         }
 
         # Takes a whole page that needs to be loaded and returns it so that it can be outputted
@@ -51,10 +52,17 @@ class Router
 
         # If the callback is an array, it means it's a controller method...
         # so... Create an instance of the relevant controller class and call the method
-
         if (is_array($callback)) {
-            Application::$app->controller = new $callback[0]();
-            $callback[0] = Application::$app->controller;
+            /** @var \app\core\Controller $controller */
+            $controller = new $callback[0]();
+            Application::$app->controller = $controller;
+            $controller->action = $callback[1]; # Defines which page is actively being accessed
+            $callback[0] = $controller;
+
+            # Middleware will throw an exception if something is wrong (i.e. no permissions to the resource)
+            foreach ($controller->getMiddlewares() as $middleware) {
+                $middleware->execute();
+            }
         }
 
         return call_user_func($callback, $this->request, $this->response);

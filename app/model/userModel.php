@@ -12,6 +12,21 @@ class UserModel extends User {
   public string $password = '';
   public string $confirmPassword = '';
 
+  # Following two functions produce a UUID for the database if the user hasn't already got one
+    public function __construct() {
+        if (property_exists($this, 'uid') && empty($this->uid)) {
+            $this->uid = $this->generateUuid();
+        }
+    }
+
+    private function generateUuid(): string {
+        $data = random_bytes(16);
+
+        $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
+
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
+
     # Defines the models table properties
     public static function tableName(): string 
     {
@@ -25,7 +40,7 @@ class UserModel extends User {
 
     public static function attributes(): array 
     {
-        return ['email', 'firstName', 'lastName', 'jobTitle', 'accessLevel', 'password'];
+        return ['uid', 'email', 'firstName', 'lastName', 'jobTitle', 'accessLevel', 'password'];
     }
   
     public function rules(): array 
