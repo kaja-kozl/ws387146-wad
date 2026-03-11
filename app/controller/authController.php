@@ -40,23 +40,35 @@ class AuthController extends Controller {
 
     # User is creating a user
     public function users(Request $request) {
-
-        # User has sent a request to create a user
         if ($request->isPost()) {
             $userModel = new UserModel();
-                
-                # Stores user sanitised input into userModel 
-                $userModel->loadData($request->getBody());
+            $userModel->loadData($request->getBody());
 
-                # Validate user input & register account if it has passed
-                if ($userModel->validate() && $userModel->save()) {
-                    Application::$app->session->setFlash('success', 'User created successfully');
-                }
-
-                # Sends user to page with newly created user
-                return $this->render('displayUsers', [
-                    'model' => $userModel
+            if ($userModel->validate() && $userModel->save()) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'flash'   => ['type' => 'success', 'message' => 'User created successfully'],
+                    'user'    => [
+                        'uid'         => $userModel->uid,
+                        'email'       => $userModel->email,
+                        'firstName'   => $userModel->firstName,
+                        'lastName'    => $userModel->lastName,
+                        'jobTitle'    => $userModel->jobTitle,
+                        'accessLevel' => $userModel->accessLevel,
+                    ]
                 ]);
+                return;
+            }
+
+            // Validation failed — return errors as JSON
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'flash'   => ['type' => 'danger', 'message' => 'Failed to create user'],
+                'errors'  => $userModel->errors
+            ]);
+            return;
         }
 
         return $this->render('displayUsers');

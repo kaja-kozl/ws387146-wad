@@ -1,73 +1,121 @@
 <?php
 namespace app\controller;
-
-require_once '../model/userModel.php';
-require_once __DIR__ . '/permissionsController.php';
+use app\core\Controller;
+use app\core\Application;
+use app\core\User;
+use app\core\Request;
+use app\model\UserModel;
+use app\core\Response;
 
 class UserController extends Controller {
     private $userModel;
 
-    public function __construct() {
-        // TODO: Initialize userModel
-        // $this->userModel = new User(...);
+    // Handles all the controlling to edit the user
+    public function editUser(Request $request, Response $response)
+    {
+        if (!$request->isPost()) {
+            $response->redirect('/profile');
+            return;
+        }
+
+        // Stores the input data in the modal
+        $editForm = new \app\model\EditUserForm();
+        $editForm->loadData($request->getBody());
+
+        // Validates the inputs and saves them in the database
+        if ($editForm->validate() && $editForm->save()) {
+
+            // Refreshes the session user object if the edit has happened on the logged in user
+            if ($editForm->uid === Application::$app->user->uid) {
+                // Re-fetch from DB so the session reflects the new data
+                $updatedUser = UserModel::findOne(['uid' => $editForm->uid]);
+                Application::$app->session->set('user', $updatedUser->uid);
+            }
+
+            // Parse it through JSON
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'user' => [
+                    'uid'         => $editForm->uid,
+                    'email'       => $editForm->email,
+                    'firstName'   => $editForm->firstName,
+                    'lastName'    => $editForm->lastName,
+                    'jobTitle'    => $editForm->jobTitle,
+                    'accessLevel' => $editForm->accessLevel,
+                ]
+            ]);
+            return;
+        }
+
+        // Returns an error if the validation has failed
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'flash'   => ['type' => 'danger', 'message' => 'Failed to update user'],
+            'error'   => array_map(fn($e) => implode(', ', $e), $editForm->errors)
+        ]);
     }
 
-    private function getCurrentUser() {
-        // Placeholder: retrieve current user from session or auth layer.
-        // Example: return $_SESSION['current_user'] ?? null;
-        return isset($_SESSION) && isset($_SESSION['current_user']) ? $_SESSION['current_user'] : null;
+
+    // Returns all users as JSON for lazy loading
+    public function getUsers(Request $request, Response $response)
+    {
+        $users = Application::$app->user->getAllUsers();
+        $data = array_map(function($user) {
+            return [
+                'uid'         => $user->uid,
+                'firstName'   => $user->firstName,
+                'lastName'    => $user->lastName,
+                'email'       => $user->email,
+                'accessLevel' => $user->accessLevel,
+            ];
+        }, $users);
+
+        header('Content-Type: application/json');
+        echo json_encode(['users' => $data]);
+        return;
     }
 
-    // TODO: at the end, if there is no extra logic to checkPerms (only calls PermissionsController) then remove it
-    private function checkPerms($user, $action) {
-        // Accepts either a user object (with accessLevel) or a role string
-        $pc = new PermissionsController();
-        return $pc->hasPermission($user, $action);
-    }
+    // Handles all the modals to delete a user
+    public function deleteUser(Request $request, Response $response)
+    {
+        if (!$request->isPost()) {
+            $response->redirect('/profile');
+            return;
+        }
 
-    public function verifyUserCredentails($email, $password) {
-        // Santise user input (email and password)
-        // Hash password
-        // Call userModel->verifyUser($email, $password)
-        // Return success code or error
-        return $this->userModel->verifyUser($email, $password);
-    }
+        $body = $request->getBody();
+        $uid  = $body['uid'] ?? null;
 
-    public function createUser($userUid, $userData) {
-        // Sanitise user data
-        // Check permissions
-        // Call model to edit user
-        // Return success code or error
-    }
-    public function getUser() {
-        // TODO: Retrieve user from request/session
-        // TODO: Call userModel->getUser()
-        // TODO: Return user details to view
-    }
+        // User cannot delete themselves
+        if (!$uid || $uid === Application::$app->user->uid) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Invalid operation.']);
+            return;
+        }
 
-    public function viewUser($userUid, $viewedUid) {
-        // Check permissions
-        // Call model to edit user
-        // Return success code or error
-    }
+        $adminUid = Application::$app->user->uid;
 
-    public function editUser($userUid, $editedUid, $valuesChanged) {
-        // Sanitise user data
-        // Check permissions
-        // Call model to edit user
-        // Return success code or error
-    }
+        // Reassign any courses owned by the deleted user to the deleting admin
+        try {
+            $db = Application::$app->db->pdo;
+            $stmt = $db->prepare("UPDATE courses SET lecturer = :adminUid WHERE lecturer = :uid");
+            $stmt->execute([':adminUid' => $adminUid, ':uid' => $uid]);
+        } catch (\Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Failed to reassign courses: ' . $e->getMessage()]);
+            return;
+        }
 
-    public function deleteUser($userUid, $deletedUid) {
-        // Check permissions
-        // Call model to delete user
-        // Return success code or error
-    }
+        $userModel = new UserModel();
+        $deleted   = $userModel->deleteUser($uid);
 
-    public function listUsers() {
-        // Check permissions
-        // Send to model to fetch users
-        // Return array of users for view to display
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $deleted,
+            'flash'   => $deleted ? ['type' => 'success', 'message' => 'User deleted. Their courses have been reassigned to you.'] : null
+        ]);
     }
 }
 

@@ -8,6 +8,7 @@ abstract class Model {
     public const RULE_MAX = 'max';
     public const RULE_MATCH = 'match';
     public const RULE_UNIQUE = 'unique';
+    public const RULE_UNIQUE_EXCEPT = 'unique_except';
 
     # Loads data from an array and assigns valid variables as attributes in an object
     # Used with form inputs
@@ -71,6 +72,23 @@ abstract class Model {
                         $this->addError($attribute, self::RULE_UNIQUE, ['attribute' => $attribute]);
                     }
                 }
+
+                if ($ruleName === self::RULE_UNIQUE_EXCEPT) {
+                    $className  = $rule['class'];
+                    $uniqueAttr = $rule['attribute'] ?? $attribute;
+                    $exceptAttr = $rule['except'];        // The column to exclude on e.g. 'uid'
+                    $exceptVal  = $this->{$rule['except_value']}; // The value to exclude e.g. $this->uid
+                    $tableName  = $className::tableName();
+                    $statement  = Application::$app->db->pdo->prepare(
+                        "SELECT * FROM $tableName WHERE $uniqueAttr = :val AND $exceptAttr != :except"
+                    );
+                    $statement->bindValue(':val',    $this->{$uniqueAttr});
+                    $statement->bindValue(':except', $exceptVal);
+                    $statement->execute();
+                    if ($statement->fetchObject()) {
+                        $this->addError($attribute, self::RULE_UNIQUE_EXCEPT, ['attribute' => $attribute]);
+                    }
+                }
             }
         }
         return empty($this->errors);
@@ -96,7 +114,8 @@ abstract class Model {
             self::RULE_MIN => 'Min length of this field must be {min}',
             self::RULE_MAX => 'Max length of this field must be {max}',
             self::RULE_MATCH => 'This field must be the same as {match}',
-            self::RULE_UNIQUE => 'Record with this {attribute} already exists'
+            self::RULE_UNIQUE => 'Record with this {attribute} already exists',
+            self::RULE_UNIQUE_EXCEPT => 'Record with this {attribute} already exists'
         ];
     }
 

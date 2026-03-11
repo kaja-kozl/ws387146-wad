@@ -76,6 +76,92 @@ class UserModel extends User {
         ];
     }
 
+    public function getAllUsersForDropdown(): array {
+        $users = $this->read('uid, firstName, lastName', []);
+        if (!$users) return [];
+        $dropdown = [];
+        foreach ($users as $user) {
+            $dropdown[$user->uid] = $user->firstName . ' ' . $user->lastName;
+        }
+        return $dropdown;
+    }
+
+    public function getAllLecturers(): array {
+        $users = $this->read('uid, firstName, lastName', [
+            "accessLevel IN ('admin', 'super_user')"
+        ]);
+
+        if (!$users) return [];
+
+        // Return as [uid => UserModel] so callers can access name or uid as needed
+        $lecturers = [];
+        foreach ($users as $user) {
+            $lecturers[$user->uid] = $user;
+        }
+
+        return $lecturers;
+    }
+
+    public function getAllUsers() {
+        $where = [];
+    
+        // Read from the database all users
+        $users = array();
+        
+        // Determine which restrictions are applied based on the users Access Level
+        if ($this->accessLevel == 'admin') {
+            $where[] = "accessLevel = 'user'";
+        } else if ($this->accessLevel == 'user') {
+            return false;
+        }
+
+        // Store them in a list as user model objects
+        if (!$users = self::read('*', $where)) {
+            return false;
+        }
+
+        // Return their users as an array
+        return $users;
+    }
+
+    public function deleteUser(string $uid): bool {
+        $deleted = self::delete(
+            ['uid = :uid'],
+            [':uid' => $uid]
+        );
+
+        return $deleted;
+    }
+
+    public function updateUser(): bool
+    {
+        // Collect fields to update
+        $set = [];
+        $params = [];
+
+        // Email, firstName, lastName, jobTitle, accessLevel
+        $fields = ['email', 'firstName', 'lastName', 'jobTitle', 'accessLevel'];
+
+        foreach ($fields as $field) {
+            $set[] = "$field = :$field";
+            $params[":$field"] = $this->$field;
+        }
+
+        // Handle password separately
+        if (isset($this->password) && $this->password !== 'Password') {
+            // Only hash and update if user changed it
+            $set[] = "password = :password";
+            $params[":password"] = password_hash($this->password, PASSWORD_DEFAULT);
+        }
+
+        // Build WHERE clause
+        $where = "uid = :uid";
+        $params[':uid'] = $this->uid;
+
+        // Call DbModel::update
+        return $this->update($set, $params, $where);
+    }
+
     public function getDisplayName(): string {
         return $this->firstName . ' ' . $this->lastName;
     }

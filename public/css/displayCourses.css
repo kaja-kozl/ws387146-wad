@@ -1,0 +1,835 @@
+/* ── Wrapper ─────────────────────────────────────────────────────── */
+.courses-wrap {
+    background: #e8e9ed;
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 0.75rem;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────── */
+.courses-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.col-activity,
+.col-courses {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    align-self: stretch;
+}
+
+.col-activity #user-activity,
+#active-courses {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* card-grid-wrap sits inside #active-courses */
+#active-courses > .card-grid-wrap {
+    flex: 1;
+    min-height: 0;
+}
+
+.col-activity .activity-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.section-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #1a1a2e;
+    margin-bottom: 0.4rem;
+}
+
+/* ── Activity table ─────────────────────────────────────────────── */
+.activity-wrap {
+    border: 2px solid #1a1a2e;
+    border-radius: 8px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.activity-table thead {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.activity-table tbody {
+    display: block;
+    overflow: hidden;
+}
+
+.activity-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.activity-table thead tr {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.activity-table thead th {
+    padding: 0.6rem 1rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.activity-table thead th:nth-child(1),
+.activity-table tbody td:nth-child(1) { width: 50%; }
+.activity-table thead th:nth-child(2),
+.activity-table tbody td:nth-child(2) { width: 33%; }
+.activity-table thead th:nth-child(3),
+.activity-table tbody td:nth-child(3) { width: 17%; }
+
+.activity-table tbody tr {
+    border-bottom: 1px solid #e8e8ee;
+    transition: background 0.12s;
+}
+
+.activity-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.activity-table tbody tr:hover {
+    background: #f4f4f8;
+}
+
+.activity-table td {
+    padding: 0.55rem 1rem;
+    font-size: 0.875rem;
+    vertical-align: middle;
+    color: #333;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Date states ────────────────────────────────────────────────── */
+.date-cell {
+    font-size: 0.8rem;
+    color: #555;
+}
+
+.date-cell.is-today {
+    font-weight: 700;
+    color: #1a1a2e;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+}
+
+.time-label {
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.date-cell.is-completed {
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: #888;
+    text-transform: uppercase;
+}
+
+/* ── Course link ────────────────────────────────────────────────── */
+
+
+.course-link:hover {
+    color: #e63946;
+    text-decoration: underline;
+}
+
+.row-icon {
+    font-size: 0.7rem;
+    margin-left: 0.3rem;
+    opacity: 0.35;
+}
+
+/* ── Capacity badge ─────────────────────────────────────────────── */
+.capacity-badge {
+    display: inline-block;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* ── Pagination bar ─────────────────────────────────────────────── */
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    background: #f4f4f8;
+    border-top: 1px solid #e8e8ee;
+    margin-top: auto;
+}
+
+.page-btn {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    color: #1a1a2e;
+    cursor: pointer;
+    padding: 0.1rem 0.4rem;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.page-btn:hover {
+    opacity: 1;
+}
+
+.page-btn:disabled {
+    opacity: 0.2;
+    cursor: default;
+}
+
+.page-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+    text-decoration: underline dotted #aaa;
+    text-underline-offset: 3px;
+}
+
+/* Page number labels should not be uppercased */
+#activity-page-label,
+#courses-page-label {
+    text-transform: none;
+    letter-spacing: 0.02em;
+    min-width: 90px;
+    text-align: center;
+    cursor: default;
+}
+
+.page-label:hover {
+    color: #1a1a2e;
+}
+
+.pagination-bar--cards {
+    background: none;
+    border-top: none;
+    justify-content: flex-end;
+    padding: 0.5rem 0 0;
+}
+
+/* ── Course cards ───────────────────────────────────────────────── */
+.card-grid-wrap {
+    border: 2px solid #1a1a2e;
+    border-radius: 8px;
+    padding: 0.75rem;
+    background: #fff;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    flex: 1;
+    min-height: 0;
+    grid-template-rows: 1fr 1fr 1fr;
+}
+
+.course-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    transition: box-shadow 0.15s;
+    min-height: 0;
+}
+
+.course-card:hover {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.card-body {
+    padding: 0.75rem 0.9rem 0.5rem;
+    flex: 1;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.2rem;
+    color: #1a1a2e;
+}
+
+.card-title 
+
+.card-title .course-link:hover {
+    color: #e63946;
+}
+
+.card-lecturer {
+    font-size: 0.78rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.card-date {
+    font-size: 0.72rem;
+    color: #888;
+}
+
+.card-action {
+    padding: 0 0.9rem 0.75rem;
+}
+
+/* ── Card buttons ───────────────────────────────────────────────── */
+.card-btn {
+    width: 100%;
+    padding: 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+.card-btn:hover:not(:disabled) {
+    filter: brightness(0.9);
+}
+
+.card-btn--enrol {
+    background: #f4a015;
+    color: #fff;
+}
+
+.card-btn--unenrol {
+    background: #f4a015;
+    color: #fff;
+}
+
+.card-btn--owner {
+    background: #e0e0e0;
+    color: #999;
+    cursor: default;
+}
+
+/* ── Add Course button ──────────────────────────────────────────── */
+.add-course-btn {
+    display: block;
+    width: 100%;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #f4a015;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+.add-course-btn:hover {
+    filter: brightness(0.92);
+}
+
+/* ── Empty states ───────────────────────────────────────────────── */
+.empty-msg {
+    font-size: 0.875rem;
+    color: #888;
+    font-style: italic;
+    padding: 0.5rem 0;
+}
+
+/* ── Modal ──────────────────────────────────────────────────────── */
+#course-modal .modal-header,
+#add-course-modal .modal-header {
+    background: #1a1a2e;
+    color: #fff;
+    border-bottom: none;
+}
+
+#course-modal .modal-title,
+#add-course-modal .modal-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+#course-modal .btn-close,
+#add-course-modal .btn-close {
+    filter: invert(1);
+}
+
+
+
+#modal-body p {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+#modal-body p strong {
+    display: inline-block;
+    min-width: 110px;
+    color: #1a1a2e;
+}
+
+#edit-form label,
+#course-form label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #495057;
+    margin-bottom: 0.2rem;
+    display: block;
+}
+
+/* ── Attendee table ─────────────────────────────────────────────── */
+#attendees h6 {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #1a1a2e;
+}
+
+#attendees .table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+#attendees .table thead {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+#attendees .table tbody {
+    display: block;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+#attendees .table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* Fixed column widths with ellipsis overflow */
+#attendees .table th,
+#attendees .table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#attendees .table th:nth-child(1),
+#attendees .table td:nth-child(1) { width: 25%; }
+
+#attendees .table th:nth-child(2),
+#attendees .table td:nth-child(2) { width: 35%; }
+
+#attendees .table th:nth-child(3),
+#attendees .table td:nth-child(3) { width: 20%; }
+
+#attendees .table th:nth-child(4),
+#attendees .table td:nth-child(4) { width: 20%; }
+
+/* ── Validation ─────────────────────────────────────────────────── */
+.invalid-input {
+    border: 1.5px solid #c0392b !important;
+    background-color: #fff8f8 !important;
+}
+
+.invalid-input:focus {
+    border-color: #c0392b !important;
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15) !important;
+}
+
+.invalid-feedback {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #c0392b;
+    margin-top: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.invalid-feedback:not(:empty)::before {
+    content: "!";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: #c0392b;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.invalid-feedback:empty,
+.invalid-feedback:blank {
+    display: none !important;
+}
+
+.invalid-feedback:empty::before {
+    display: none;
+}
+
+/* ── Flash ──────────────────────────────────────────────────────── */
+#course-form .alert {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+/* ── Responsive ─────────────────────────────────────────────────── */
+
+/* ~600px per column: two-column layout starts breaking — go single column */
+@media (max-width: 768px) {
+    .courses-wrap {
+        overflow-y: auto;
+        flex: none;
+        min-height: auto;
+    }
+
+    .courses-layout {
+        grid-template-columns: 1fr;
+        overflow: visible;
+        flex: none;
+        min-height: auto;
+    }
+
+    .col-activity,
+    .col-courses {
+        overflow: visible;
+        min-height: auto;
+    }
+
+    .col-activity #user-activity,
+    #active-courses {
+        overflow: visible;
+        flex: none;
+    }
+
+    .card-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .activity-table tbody {
+        overflow-y: auto;
+    }
+}
+
+/* ~400px: activity table Date+Capacity columns can no longer fit — stack into title */
+@media (max-width: 400px) {
+    .activity-table thead th:nth-child(2),
+    .activity-table thead th:nth-child(3) {
+        display: none;
+    }
+
+    .activity-table td:nth-child(2),
+    .activity-table td:nth-child(3) {
+        display: none;
+    }
+
+    .activity-table td:nth-child(1) .row-sub {
+        display: block;
+        font-size: 0.72rem;
+        color: #666;
+        margin-top: 2px;
+    }
+
+    /* Cards drop to single column at very small screens */
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .course-card {
+        font-size: 0.85rem;
+    }
+}
+/* ── Truncate long title text ───────────────────────────────────── */
+.activity-table td.title-cell {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.course-link {
+    display: block;
+    background: none;
+    border: none;
+    padding: 0;
+    color: #1a6faf;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    text-align: left;
+}
+
+/* ── Filter toggle button in activity pagination ────────────────── */
+.filter-btn {
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+    color: #f4a015;
+    border: 1.5px solid #f4a015;
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.filter-btn:hover {
+    background-color: #f4a015;
+    color: #fff;
+}
+
+/* ── Owned vs enrolled rows ─────────────────────────────────────── */
+.activity-table tbody tr[data-owned="1"] {
+    background-color: #f0f4ff;
+    border-left: 3px solid #1a6faf;
+}
+
+.activity-table tbody tr[data-owned="1"]:hover {
+    background-color: #e4ecff;
+}
+
+.activity-table tbody tr[data-owned="1"] .course-link {
+    color: #1a3a6b;
+    font-weight: 600;
+}
+
+/* Sub-line spans hidden by default, shown via media queries */
+.activity-table td .row-sub {
+    display: none;
+}
+
+/* ── Activity placeholder rows (padding to fill fixed height) ───── */
+.activity-table tbody tr.activity-placeholder {
+    border-bottom: none;
+    pointer-events: none;
+}
+.activity-table tbody tr.activity-placeholder td {
+    height: 42px;
+    padding: 0;
+    border: none;
+}
+.activity-table tbody tr.activity-placeholder:hover {
+    background: none;
+}
+
+/* ── Add Course / Edit Course modal form ────────────────────────── */
+#add-course-modal .modal-body,
+#course-modal .modal-body {
+    padding: 1rem 1.25rem 0.5rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 140px);
+}
+#course-form,
+#edit-form {
+    padding: 0;
+}
+
+#course-form .form-group,
+#edit-form .form-group {
+    margin-bottom: 0.5rem !important;
+    width: 100%;
+}
+
+#edit-form label,
+#course-form label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #1a1a2e;
+    margin-bottom: 0.15rem !important;
+    display: block;
+}
+
+#course-form .form-control,
+#course-form .form-select,
+#course-form input,
+#course-form textarea,
+#course-form select,
+#edit-form .form-control,
+#edit-form .form-select,
+#edit-form input,
+#edit-form textarea,
+#edit-form select {
+    border: 1.5px solid #c8ccd4 !important;
+    border-radius: 5px !important;
+    font-size: 0.875rem;
+    padding: 0.45rem 0.7rem;
+    color: #1a1a2e;
+    background-color: #fafbfc !important;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+#course-form .form-control:focus,
+#course-form .form-select:focus,
+#course-form input:focus,
+#course-form textarea:focus,
+#course-form select:focus,
+#edit-form .form-control:focus,
+#edit-form .form-select:focus,
+#edit-form input:focus,
+#edit-form textarea:focus,
+#edit-form select:focus {
+    border-color: #f4a015 !important;
+    box-shadow: 0 0 0 3px rgba(244, 160, 21, 0.15) !important;
+    outline: none !important;
+    background-color: #fff;
+}
+
+#course-form textarea.form-control,
+#edit-form textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Force all inputs/selects/textareas to fill their container — handled above */
+
+/* Two-column grid for date fields */
+#course-form .date-row,
+#edit-form .date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+@media (max-width: 480px) {
+    #course-form .date-row,
+    #edit-form .date-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Submit / cancel buttons */
+#course-form .btn-primary,
+#edit-form .btn-primary {
+    background-color: #f4a015;
+    border-color: #f4a015;
+    color: #1a1a2e;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.4rem;
+    border-radius: 5px;
+    transition: background-color 0.15s;
+}
+
+#course-form .btn-primary:hover,
+#edit-form .btn-primary:hover {
+    background-color: #cf8e18;
+    border-color: #cf8e18;
+}
+
+#course-form .btn-secondary,
+#edit-form .btn-secondary {
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.4rem;
+    border-radius: 5px;
+}
+
+/* ── Modal loading spinner ──────────────────────────────────────── */
+.modal-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 0;
+}
+
+.spinner-wheel {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e8e9ed;
+    border-top-color: #f4a015;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

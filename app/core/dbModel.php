@@ -48,5 +48,58 @@ abstract class dbModel extends Model {
     public static function prepare($sql) {
         return Application::$app->db->pdo->prepare($sql);
     }
+
+    # Enables creation of READ operations in database
+    public function read($attributes, $where = []) {
+        // Take the table of the model requesting it
+        $tableName = $this->tableName();
+
+        $sql = "SELECT $attributes FROM $tableName";
+
+        if (!empty($where)) {
+            $conditions = implode(' AND ', $where);
+            $sql .= " WHERE $conditions";
+        }
+
+        $sql .= ";";
+
+        $statement = self::prepare($sql);
+        $statement->execute();
+
+        return $statement->fetchAll(\PDO::FETCH_CLASS, static::class);
+    }
+
+    public function delete($where = [], $params=[]) {
+        $tableName = $this->tableName();
+
+        $sql = "DELETE FROM $tableName";
+
+        if (!empty($where)) {
+            $conditions = implode(' AND ', $where);
+            $sql .= " WHERE $conditions";
+        }
+
+        $sql .= ";";
+
+        $statement = self::prepare($sql);
+
+        return $statement->execute($params);
+    }
+
+    public function update(array $set = [], array $params = [], string $where = '') {
+        $tableName = $this->tableName();
+
+        $sql = "UPDATE $tableName SET " . implode(', ', $set);
+        
+        if (!empty($where)) {
+            $sql .= " WHERE $where";
+        }
+
+        $sql .= ";";
+
+        $statement = self::prepare($sql);
+
+        return $statement->execute($params);   
+    }
 }
 ?>

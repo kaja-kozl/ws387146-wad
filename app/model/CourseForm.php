@@ -5,7 +5,8 @@ use app\core\Model;
 
 class CourseForm extends Model {
     public $courseTitle = '';
-    public $dateTime = '';
+    public $startDate = '';
+    public $endDate = '';
     public $maxAttendees = '';
     public $courseDesc = '';
     public $lecturer = '';
@@ -13,8 +14,8 @@ class CourseForm extends Model {
     public function rules(): array {
         return [
             'courseTitle' => [],
-            'dateTime' => [],
-            'duration' => [],
+            'startDate' => [],
+            'endDate' => [],
             'maxAttendees' => [],
             'courseDesc' => [],
             'lecturer' => []
@@ -45,8 +46,8 @@ class CourseForm extends Model {
     public function labels(): array {
         return [
             'courseTitle' => 'Course Title',
-            'dateTime' => 'Date & Time',
-            'duration' => 'Duration',
+            'startDate' => 'Start Date & Time',
+            'endDate' => 'End Date & Time',
             'maxAttendees' => 'Maximum Attendees',
             'courseDesc' => 'Course Description',
             'lecturer' => 'Lecturer'

@@ -6,8 +6,8 @@ use app\core\Model;
 class CourseModel extends dbModel {
   public $uid = '';
   public $courseTitle = '';
-  public $dateTime = '';
-  public $duration = '';
+  public $startDate = '';
+  public $endDate = '';
   public $maxAttendees = '';
   public $courseDesc = '';
   public $lecturer = '';
@@ -41,15 +41,15 @@ class CourseModel extends dbModel {
 
     public static function attributes(): array 
     {
-        return ['uid', 'courseTitle', 'dateTime', 'duration', 'maxAttendees', 'courseDesc', 'lecturer'];
+        return ['uid', 'courseTitle', 'startDate', 'endDate', 'maxAttendees', 'courseDesc', 'lecturer'];
     }
 
     public function rules(): array 
     {
         return [
             'courseTitle' => [self::RULE_REQUIRED, [self::RULE_MAX, 'max' => 32]],
-            'dateTime' => [self::RULE_REQUIRED],
-            'duration' => [self::RULE_REQUIRED],
+            'startDate' => [self::RULE_REQUIRED],
+            'endDate' => [self::RULE_REQUIRED],
             'maxAttendees' => [self::RULE_REQUIRED],
             'courseDesc' => [self::RULE_REQUIRED, [self::RULE_MAX, 'max' => 255]],
             'lecturer' => [self::RULE_REQUIRED]
@@ -59,20 +59,75 @@ class CourseModel extends dbModel {
     public function labels(): array {
         return [
             'courseTitle' => 'Course Title',
-            'dateTime' => 'Date & Time',
-            'duration' => 'Duration',
+            'startDate' => 'Start Date & Time',
+            'endDate' => 'End Date & Time',
             'maxAttendees' => 'Maximum Attendees',
             'courseDesc' => 'Course Description',
             'lecturer' => 'Lecturer'
         ];
     }
 
-    function getCourse() {
-        return $this->courseTitle;
+    public function getCourse(string $uid): ?self {
+        $course = self::findOne(['uid' => $uid]);
+        return $course ?: null;
     }
 
-    public function save() {
-        return parent::save();
+    public function getAllCourses() {
+        $courses = $this->read('*');
+
+        if (!$courses) {
+            return [];
+        }
+
+        return $courses;
+    }
+
+    # Returns all courses that have not been passed
+    public function getActiveCourses(): array {
+        $courses = $this->read('*', ["endDate >= NOW()"]);
+
+        if (!$courses) {
+            return [];
+        }
+
+        return $courses;
+    }
+
+    // Returns courses where the user is the lecturer, matched by UID.
+    public function getCoursesByLecturer(string $lecturerUid): array {
+        $courses = $this->read('*', ["lecturer = '$lecturerUid'"]);
+        if (!$courses) return [];
+        return $courses;
+    }
+
+    public function getCoursesByUids(array $uids): array {
+        if (empty($uids)) return [];
+        $placeholders = implode(',', array_map(fn($uid) => "'$uid'", $uids));
+        $courses = $this->read('*', ["uid IN ($placeholders)"]);
+        if (!$courses) return [];
+        return $courses;
+    }
+
+    public function updateCourse(): bool {
+        $fields = ['courseTitle', 'courseDesc', 'startDate', 'endDate', 'maxAttendees', 'lecturer'];
+        $set = [];
+        $params = [];
+
+        foreach ($fields as $field) {
+            $set[] = "$field = :$field";
+            $params[":$field"] = $this->$field;
+        }
+
+        $params[':uid'] = $this->uid;
+
+        return $this->update($set, $params, 'uid = :uid');
+    }
+
+    public function deleteCourse(string $uid): bool {
+        return $this->delete(
+            ['uid = :uid'],
+            [':uid' => $uid]
+        );
     }
 }
 

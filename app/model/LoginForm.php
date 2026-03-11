@@ -15,7 +15,7 @@ class LoginForm extends Model {
     }
 
     public function login() {
-        # Find the user based on the email
+        # Find the user based on the email, store it in a UserModel object
         $user = UserModel::findOne(['email' => $this->email]);
 
         # If not found, show an error
