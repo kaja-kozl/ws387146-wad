@@ -7,7 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Fetch wrapper ----
     function post(url, fd) {
         return fetch(url, { method: 'POST', body: fd })
-            .then(r => r.json())
+            .then(r => {
+                const ct = r.headers.get('Content-Type') || '';
+                if (!ct.includes('application/json')) {
+                    return r.text().then(html => {
+                        console.error(`Non-JSON response from ${url}:`, html);
+                        throw new Error(`Server returned non-JSON response (${r.status})`);
+                    });
+                }
+                return r.json();
+            })
             .catch(err => { console.error(err); alert('Something went wrong.'); });
     }
 

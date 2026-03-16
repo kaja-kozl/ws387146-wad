@@ -4,84 +4,54 @@ use app\core\Controller;
 use app\core\Application;
 use app\core\Request;
 use app\core\Response;
+use app\core\PermissionsService;
 use app\core\middlewares\AuthMiddleware;
-use app\model\UserModel;
 use app\model\LoginForm;
 
-class AuthController extends Controller {
-
-    # Enables restricting permissions on certain pages
-    public function __construct() {
-        $this->registerMiddleware(new AuthMiddleware(['profile'])); # Middleware lives between the request and controller
+class AuthController extends Controller
+{
+    public function __construct()
+    {
+        $this->registerMiddleware(new AuthMiddleware(['profile']));
     }
-    
-    # User is logging in
-    public function login(Request $request, Response $response) {
+
+    public function login(Request $request, Response $response): mixed
+    {
         $this->setLayout('auth');
         $loginForm = new LoginForm();
 
-        # User has sent a log in request
         if ($request->isPost()) {
-            # Stores users sanitised input in loginForm 
             $loginForm->loadData($request->getBody());
-            
-            # Checks input against rules and checks to see if user exists in database, redirecting it to appropriate pages
+
             if ($loginForm->validate() && $loginForm->login()) {
-                $response->redirect('/courses'); // Should be home page
                 Application::$app->session->setFlash('success', 'Welcome back!');
-                return;
-            }
-        }
-
-        return $this->render('displayLogin', [
-            'model' => $loginForm
-        ]);
-    }
-
-    # User is creating a user
-    public function users(Request $request) {
-        if ($request->isPost()) {
-            $userModel = new UserModel();
-            $userModel->loadData($request->getBody());
-
-            if ($userModel->validate() && $userModel->save()) {
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'success' => true,
-                    'flash'   => ['type' => 'success', 'message' => 'User created successfully'],
-                    'user'    => [
-                        'uid'         => $userModel->uid,
-                        'email'       => $userModel->email,
-                        'firstName'   => $userModel->firstName,
-                        'lastName'    => $userModel->lastName,
-                        'jobTitle'    => $userModel->jobTitle,
-                        'accessLevel' => $userModel->accessLevel,
-                    ]
-                ]);
-                return;
+                $this->json(['success' => true, 'redirect' => '/courses']);
+                return null;
             }
 
-            // Validation failed — return errors as JSON
-            header('Content-Type: application/json');
-            echo json_encode([
+            $this->json([
                 'success' => false,
-                'flash'   => ['type' => 'danger', 'message' => 'Failed to create user'],
-                'errors'  => $userModel->errors
+                'errors'  => $loginForm->errors
             ]);
-            return;
+            return null;
         }
 
-        return $this->render('displayUsers');
+        return $this->render('displayLogin', ['model' => $loginForm]);
     }
 
-    public function logout(Request $request, Response $response) {
+    public function logout(Request $request, Response $response): void
+    {
         Application::$app->logout();
         $response->redirect('/');
     }
 
-    public function profile() {
-        return $this->render('displayUsers');
+    public function profile(): string
+    {
+        return $this->render('displayUsers', [
+            'canListUsers'       => PermissionsService::can('list', 'user'),
+            'canEditJobTitle'    => PermissionsService::atLeast('admin'),
+            'canEditAccessLevel' => PermissionsService::atLeast('super_user'),
+        ]);
     }
 }
-
 ?>

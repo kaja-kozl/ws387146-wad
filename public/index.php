@@ -51,7 +51,7 @@ $app->router->post('/addAttendee', [CourseController::class, 'addAttendee']);
 $app->router->post('/removeAttendee', [CourseController::class, 'removeAttendee']);
 
 $app->router->get('/profile', [AuthController::class, 'profile']);
-$app->router->post('/profile', [AuthController::class, 'users']);
+$app->router->post('/profile', [UserController::class, 'createUser']);
 
 # Backend APIs for user actions
 $app->router->post('/delUser', [UserController::class, 'deleteUser']);

@@ -2,32 +2,37 @@
 namespace app\core;
 use app\core\middlewares\BaseMiddleware;
 
-# Users from router are returned views from respective controllers
-class Controller {
-
-    public static Controller $controller;
+class Controller
+{
     public string $layout = 'main';
     public string $action = '';
-    protected array $middlewares = []; # Array of middleware classes from namespace \app\core\middlewares\BaseMiddleware[]
+    protected array $middlewares = [];
 
-    public function __construct() {
-        self::$controller = $this;
-    }
-    public function render($view, $params = []) {
+    public function render(string $view, array $params = []): string
+    {
         return Application::$app->view->renderView($view, $params);
     }
 
-    public function setLayout($layout) {
+    public function setLayout(string $layout): void
+    {
         $this->layout = $layout;
     }
 
-    public function registerMiddleware(BaseMiddleware $middleware) {
+    public function registerMiddleware(BaseMiddleware $middleware): void
+    {
         $this->middlewares[] = $middleware;
     }
 
-    public function getMiddlewares(): array {
+    public function getMiddlewares(): array
+    {
         return $this->middlewares;
     }
-}
 
+    protected function json(array $data, int $status = 200): void
+    {
+        Application::$app->response->setStatusCode($status);
+        header('Content-Type: application/json');
+        echo json_encode($data);
+    }
+}
 ?>

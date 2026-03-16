@@ -29,7 +29,7 @@ class EditUserForm extends Model {
 
         // Only validate password fields if the user is actually changing their password
         if (!empty($this->password) && $this->password !== 'Password') {
-            $rules['password']        = [[self::RULE_MIN, 'min' => 8]];
+            $rules['password']        = [self::RULE_PASSWORD_COMPLEXITY];
             $rules['confirmPassword'] = [[self::RULE_MATCH, 'match' => 'password']];
         }
 

@@ -1,71 +1,50 @@
-<?php 
-
+<?php
 use app\core\Application;
-$this->title = 'Profile'; 
-
+use app\model\UserModel;
+$this->title = 'Profile';
 $currentUser = Application::$app->user;
-
-function renderEditUserModal($editedUser) { ?>
-    <div class="modal fade" id="editProfileModal-<?= $editedUser->uid ?>" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-            <?php $form = \app\core\form\Form::begin('/editUser', "post", ['class' => 'edit-user-form']); ?>
-                <input type="hidden" name="uid" value="<?= $editedUser->uid ?>">
-                <?php echo $form->field($editedUser, 'email')->setValue($editedUser->email); ?>
-                <?php echo $form->field($editedUser, 'password')->passwordField()->setValue("Password"); ?>
-                <?php echo $form->field($editedUser, 'confirmPassword')->passwordField(); ?>
-                <?php echo $form->field($editedUser, 'firstName')->setValue($editedUser->firstName); ?>
-                <?php echo $form->field($editedUser, 'lastName')->setValue($editedUser->lastName); ?>
-                <?php $jobTitle_field = $form->field($editedUser, 'jobTitle')->dropDownField([
-                    'banking_and_finance' => 'Banking & Finance',
-                    'biohazard_remidiation' => 'Bio-hazard Remidiation',
-                    'human_resources' => 'Human Resources',
-                    'hypnotisation' => 'Hypnotisation',
-                    'intern' => 'Intern',
-                    'legal' => 'Legal',
-                    'management' => 'Management',
-                    'mass_surveillance' => 'Mass Surveillance',
-                    'project_management' => 'Project Management',
-                    'ritualistic_sacrifice' => 'Ritualistic Sacrifice',
-                    'sales' => 'Sales',
-                    'software_development' => 'Software Development'
-                ])->setValue($editedUser->jobTitle); 
-                
-                if ($editedUser->accessLevel == 'user') {
-                    $jobTitle_field->readonly();
-                }
-                echo $jobTitle_field;
-                ?>
-                <?php $accessLevel_field = $form->field($editedUser, 'accessLevel')->dropDownField([
-                    'user' => 'User',
-                    'admin' => 'Admin',
-                    'super_user' => 'Super User'
-                ])->setValue($editedUser->accessLevel); 
-                
-                if ($editedUser->accessLevel !== 'super_user') {
-                    $accessLevel_field->readonly();
-                }
-                echo $accessLevel_field;
-                ?>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <input type="submit" class="btn btn-primary" value="Update">
-                </div>
-            <?php $form->end(); ?>
-        </div>
-        </div>
-    </div>
-    </div>
-<?php } ?>
+?>
 
 <link rel="stylesheet" href="/css/displayUsers.css">
 
-<?php renderEditUserModal($currentUser); ?>
+<!-- ── Shared edit modal (populated by JS for any user) ── -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+<div class="modal-dialog">
+    <div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <?php
+        $dummyUser = new UserModel();
+        $form = \app\core\form\Form::begin('/editUser', "post", ['class' => 'edit-user-form']);
+        ?>
+            <input type="hidden" name="uid">
+            <?php echo $form->field($dummyUser, 'email'); ?>
+            <?php echo $form->field($dummyUser, 'password')->passwordField()->setValue("Password"); ?>
+            <?php echo $form->field($dummyUser, 'confirmPassword')->passwordField(); ?>
+            <?php echo $form->field($dummyUser, 'firstName'); ?>
+            <?php echo $form->field($dummyUser, 'lastName'); ?>
+            <?php
+            $jobTitle_field = $form->field($dummyUser, 'jobTitle')->dropDownField(UserModel::JOB_TITLES);
+            if (!$canEditJobTitle) $jobTitle_field->readonly();
+            echo $jobTitle_field;
+            ?>
+            <?php
+            $accessLevel_field = $form->field($dummyUser, 'accessLevel')->dropDownField(UserModel::ACCESS_LEVELS);
+            if (!$canEditAccessLevel) $accessLevel_field->readonly();
+            echo $accessLevel_field;
+            ?>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <input type="submit" class="btn btn-primary" value="Update">
+            </div>
+        <?php $form->end(); ?>
+    </div>
+    </div>
+</div>
+</div>
 
 <div class="users-wrap">
 
@@ -74,7 +53,7 @@ function renderEditUserModal($editedUser) { ?>
             <button class="nav-link active" id="profile-tab" data-bs-toggle="tab"
                 data-bs-target="#profile" type="button" role="tab">Your Profile</button>
         </li>
-        <?php if ($currentUser->accessLevel !== 'user'): ?>
+        <?php if ($canListUsers): ?>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="users-tab" data-bs-toggle="tab"
                 data-bs-target="#users" type="button" role="tab">Other Users</button>
@@ -92,18 +71,20 @@ function renderEditUserModal($editedUser) { ?>
                 <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Last Name</small><br><?= htmlspecialchars($currentUser->lastName) ?></p>
                 <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Job Title</small><br><?= htmlspecialchars($currentUser->jobTitle) ?></p>
                 <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Access Level</small><br><?= htmlspecialchars($currentUser->accessLevel) ?></p>
-                <button class="btn-edit-profile" data-bs-toggle="modal" data-bs-target="#editProfileModal-<?= $currentUser->uid ?>">Edit Profile</button>
+                <button class="btn-edit-profile"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editProfileModal"
+                    data-uid="<?= htmlspecialchars($currentUser->uid) ?>">Edit Profile</button>
             </div>
         </div>
 
         <!-- ── Other Users tab ── -->
-        <?php if ($currentUser->accessLevel !== 'user'): ?>
+        <?php if ($canListUsers): ?>
         <div class="tab-pane fade tab-pane-fill" id="users" role="tabpanel">
             <div class="users-header">
                 <h1 class="all-users-heading">All Users</h1>
                 <button class="btn-create-user" data-bs-toggle="modal" data-bs-target="#createUserModal">+ CREATE USER</button>
             </div>
-
             <div class="users-table-wrap">
                 <div class="users-table-scroll">
                     <table class="users-table">
@@ -117,9 +98,7 @@ function renderEditUserModal($editedUser) { ?>
                                 <th>Delete</th>
                             </tr>
                         </thead>
-                        <tbody id="users-tbody">
-                            <!-- Rows loaded lazily when tab is first opened -->
-                        </tbody>
+                        <tbody id="users-tbody"></tbody>
                     </table>
                     <div id="users-loading" class="users-loading">Loading users…</div>
                 </div>
@@ -136,6 +115,7 @@ function renderEditUserModal($editedUser) { ?>
 </div>
 
 <!-- ── Create User Modal ── -->
+<?php if ($canListUsers): ?>
 <div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -145,46 +125,31 @@ function renderEditUserModal($editedUser) { ?>
             </div>
             <div class="modal-body">
                 <?php
-                if (!isset($model)) { $model = new \app\model\UserModel(); }
-                $newUser = $model;
+                $newUser = new UserModel();
+                $form = \app\core\form\Form::begin('/profile', "post", ['class' => 'create-user-form']);
+                echo $form->field($newUser, 'email');
+                echo $form->field($newUser, 'password')->passwordField();
+                echo $form->field($newUser, 'confirmPassword')->passwordField();
+                echo $form->field($newUser, 'firstName');
+                echo $form->field($newUser, 'lastName');
+                echo $form->field($newUser, 'jobTitle')->dropDownField(UserModel::JOB_TITLES);
+                echo $form->field($newUser, 'accessLevel')->dropDownField(UserModel::ACCESS_LEVELS);
                 ?>
-                <?php $form = \app\core\form\Form::begin('/profile', "post", ['class' => 'create-user-form']); ?>
-                    <?php echo $form->field($newUser, 'email') ?>
-                    <?php echo $form->field($newUser, 'password')->passwordField() ?>
-                    <?php echo $form->field($newUser, 'confirmPassword')->passwordField() ?>
-                    <?php echo $form->field($newUser, 'firstName') ?>
-                    <?php echo $form->field($newUser, 'lastName') ?>
-                    <?php echo $form->field($newUser, 'jobTitle')->dropDownField([
-                        'banking_and_finance' => 'Banking & Finance',
-                        'biohazard_remidiation' => 'Bio-hazard Remidiation',
-                        'human_resources' => 'Human Resources',
-                        'hypnotisation' => 'Hypnotisation',
-                        'intern' => 'Intern',
-                        'legal' => 'Legal',
-                        'management' => 'Management',
-                        'mass_surveillance' => 'Mass Surveillance',
-                        'project_management' => 'Project Management',
-                        'ritualistic_sacrifice' => 'Ritualistic Sacrifice',
-                        'sales' => 'Sales',
-                        'software_development' => 'Software Development'
-                    ]) ?>
-                    <?php echo $form->field($newUser, 'accessLevel')->dropDownField([
-                        'user' => 'User',
-                        'admin' => 'Admin',
-                        'super_user' => 'Super User'
-                    ]) ?>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <input type="submit" class="btn btn-primary" value="Create User">
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <input type="submit" class="btn btn-primary" value="Create User">
+                </div>
                 <?php $form->end(); ?>
             </div>
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+
+    const currentUserUid = <?= json_encode($currentUser->uid) ?>;
 
     // ── Flash messages ──
     function showFlash(type, message) {
@@ -196,78 +161,110 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => flash.remove(), 3500);
     }
 
-    // ── confirmPassword toggle in edit modals ──
-    document.querySelectorAll('.edit-user-form').forEach(form => {
-        const passwordField = form.querySelector('[name="password"]');
-        const confirmField  = form.querySelector('[name="confirmPassword"]')?.closest('.form-group');
-        if (passwordField && confirmField) {
-            confirmField.style.display = 'none';
+    // ── Populate shared edit modal before it opens ──
+    const editModal = document.querySelector('#editProfileModal');
+    editModal?.addEventListener('show.bs.modal', function(e) {
+        const uid  = e.relatedTarget?.dataset.uid;
+        if (!uid) return;
+
+        // Find from loaded users list, or fall back to current user data
+        const user = allUsers.find(u => u.uid === uid) || (uid === currentUserUid ? {
+            uid:         currentUserUid,
+            email:       <?= json_encode($currentUser->email) ?>,
+            firstName:   <?= json_encode($currentUser->firstName) ?>,
+            lastName:    <?= json_encode($currentUser->lastName) ?>,
+            jobTitle:    <?= json_encode($currentUser->jobTitle) ?>,
+            accessLevel: <?= json_encode($currentUser->accessLevel) ?>,
+        } : null);
+
+        if (!user) return;
+
+        const f = this.querySelector('.edit-user-form');
+        f.querySelector('[name="uid"]').value         = user.uid;
+        f.querySelector('[name="email"]').value       = user.email;
+        f.querySelector('[name="firstName"]').value   = user.firstName;
+        f.querySelector('[name="lastName"]').value    = user.lastName;
+        f.querySelector('[name="jobTitle"]').value    = user.jobTitle;
+        f.querySelector('[name="accessLevel"]').value = user.accessLevel;
+        f.querySelector('[name="password"]').value    = 'Password';
+        f.querySelector('[name="confirmPassword"]').value = '';
+
+        // Reset confirmPassword visibility
+        const confirmGroup = f.querySelector('[name="confirmPassword"]')?.closest('.form-group');
+        if (confirmGroup) confirmGroup.style.display = 'none';
+    });
+
+    // ── confirmPassword toggle ──
+    const editForm = document.querySelector('.edit-user-form');
+    if (editForm) {
+        const passwordField = editForm.querySelector('[name="password"]');
+        const confirmGroup  = editForm.querySelector('[name="confirmPassword"]')?.closest('.form-group');
+        if (passwordField && confirmGroup) {
+            confirmGroup.style.display = 'none';
             passwordField.addEventListener('input', function() {
-                confirmField.style.display = this.value !== 'Password' ? 'block' : 'none';
+                confirmGroup.style.display = this.value !== 'Password' ? 'block' : 'none';
             });
         }
-    });
+    }
 
-    // ── Edit user form submissions ──
-    document.querySelectorAll('.edit-user-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetch('/editUser', { method: 'POST', body: new FormData(form) })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.flash) showFlash(data.flash.type, data.flash.message);
-                    if (data.success) {
-                        const uidInput = form.querySelector('[name="uid"]');
-                        if (uidInput) {
-                            const profileInfo = document.querySelector('#profile-info');
-                            if (profileInfo && data.user.uid === <?= json_encode($currentUser->uid) ?>) {
-                                profileInfo.innerHTML = `
-                                    <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Email</small><br>${data.user.email}</p>
-                                    <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">First Name</small><br>${data.user.firstName}</p>
-                                    <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Last Name</small><br>${data.user.lastName}</p>
-                                    <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Job Title</small><br>${data.user.jobTitle}</p>
-                                    <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Access Level</small><br>${data.user.accessLevel}</p>
-                                    <button class="btn-edit-profile"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#editProfileModal-${data.user.uid}">Edit Profile</button>
-                                `;
-                            }
-                            const userRow = document.querySelector(`tr[data-uid="${data.user.uid}"]`);
-                            if (userRow) {
-                                userRow.querySelector('td:nth-child(2)').textContent = `${data.user.firstName} ${data.user.lastName}`;
-                                userRow.querySelector('td:nth-child(3)').textContent = data.user.email;
-                                userRow.querySelector('td:nth-child(4)').textContent = data.user.accessLevel;
-                            }
-                        }
-                        const modalEl = form.closest('.modal');
-                        bootstrap.Modal.getInstance(modalEl)?.hide();
-                    } else {
-                        const errors = data.errors;
-                        if (errors && typeof errors === 'object') {
-                            Object.entries(errors).forEach(([field, msg]) => {
-                                const input = form.querySelector(`[name="${field}"]`);
-                                if (input) {
-                                    input.classList.add('invalid-input');
-                                    const fb = input.closest('.form-group')?.querySelector('.invalid-feedback');
-                                    if (fb) fb.textContent = Array.isArray(msg) ? msg[0] : msg;
-                                }
-                            });
-                        } else {
-                            showFlash('danger', data.error || 'Failed to update profile.');
+    // ── Edit user form submission ──
+    editModal?.querySelector('.edit-user-form')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch('/editUser', { method: 'POST', body: new FormData(this) })
+            .then(r => r.json())
+            .then(data => {
+                if (data.flash) showFlash(data.flash.type, data.flash.message);
+                if (data.success) {
+                    // Update profile card if editing self
+                    if (data.user.uid === currentUserUid) {
+                        const profileInfo = document.querySelector('#profile-info');
+                        if (profileInfo) {
+                            profileInfo.querySelector('p:nth-child(1) br')?.nextSibling && (profileInfo.querySelector('p:nth-child(1)').lastChild.textContent = data.user.email);
+                            profileInfo.querySelector('p:nth-child(2)').lastChild.textContent = data.user.firstName;
+                            profileInfo.querySelector('p:nth-child(3)').lastChild.textContent = data.user.lastName;
+                            profileInfo.querySelector('p:nth-child(4)').lastChild.textContent = data.user.jobTitle;
+                            profileInfo.querySelector('p:nth-child(5)').lastChild.textContent = data.user.accessLevel;
                         }
                     }
-                })
-                .catch(() => showFlash('danger', 'Unexpected error occurred.'));
-        });
+                    // Update table row if present
+                    const userRow = document.querySelector(`tr[data-uid="${data.user.uid}"]`);
+                    if (userRow) {
+                        userRow.querySelector('td:nth-child(2)').textContent = `${data.user.firstName} ${data.user.lastName}`;
+                        userRow.querySelector('td:nth-child(3)').textContent = data.user.email;
+                        userRow.querySelector('td:nth-child(4)').textContent = data.user.accessLevel;
+                    }
+                    // Update allUsers cache
+                    const idx = allUsers.findIndex(u => u.uid === data.user.uid);
+                    if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...data.user };
+
+                    bootstrap.Modal.getInstance(editModal)?.hide();
+                } else {
+                    const errors = data.errors;
+                    if (errors && typeof errors === 'object') {
+                        Object.entries(errors).forEach(([field, msg]) => {
+                            const input = this.querySelector(`[name="${field}"]`);
+                            if (input) {
+                                input.classList.add('invalid-input');
+                                const fb = input.closest('.form-group')?.querySelector('.invalid-feedback');
+                                if (fb) fb.textContent = Array.isArray(msg) ? msg[0] : msg;
+                            }
+                        });
+                    } else {
+                        showFlash('danger', data.error || 'Failed to update profile.');
+                    }
+                }
+            })
+            .catch(() => showFlash('danger', 'Unexpected error occurred.'));
     });
 
-    // ── Lazy-load users on tab click ──
+    // ── Lazy-load users ──
     const USERS_PER_PAGE = 8;
-    let allUsers = [];
+    let allUsers    = [];
     let currentPage = 0;
 
     function renderUsersPage() {
         const tbody = document.querySelector('#users-tbody');
+        if (!tbody) return;
         const pages = Math.max(1, Math.ceil(allUsers.length / USERS_PER_PAGE));
         if (currentPage >= pages) currentPage = pages - 1;
 
@@ -292,20 +289,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const usersTab = document.querySelector('#users-tab');
-    usersTab?.addEventListener('shown.bs.tab', function() {
+
+    function loadUsers() {
         if (usersTab.dataset.loaded) return;
         usersTab.dataset.loaded = '1';
         fetch('/getUsers')
             .then(r => r.json())
             .then(data => {
                 document.querySelector('#users-loading')?.remove();
-                allUsers = data.users || [];
+                if (!data.users) {
+                    document.querySelector('#users-tbody').innerHTML =
+                        '<tr><td colspan="6">Failed to load users.</td></tr>';
+                    return;
+                }
+                allUsers = data.users;
                 renderUsersPage();
             })
             .catch(() => {
-                document.querySelector('#users-loading').textContent = 'Failed to load users.';
+                const loading = document.querySelector('#users-loading');
+                if (loading) loading.textContent = 'Failed to load users.';
             });
-    });
+    }
+
+    usersTab?.addEventListener('shown.bs.tab', loadUsers);
+
+    // Trigger immediately if users tab is already active on page load
+    if (usersTab?.classList.contains('active')) loadUsers();
 
     // ── Build a table row for a user ──
     function buildUserRow(user) {
@@ -313,17 +322,14 @@ document.addEventListener('DOMContentLoaded', () => {
         tr.dataset.uid = user.uid;
         tr.innerHTML = `
             <td>${user.uid}</td>
-            <td>
-                ${user.firstName} ${user.lastName}
-                <span class="user-email">${user.email}</span>
-                <span class="user-access">${user.accessLevel}</span>
-            </td>
+            <td>${user.firstName} ${user.lastName}</td>
             <td>${user.email}</td>
             <td>${user.accessLevel}</td>
             <td>
                 <button type="button" class="btn-table-edit"
                     data-bs-toggle="modal"
-                    data-bs-target="#editProfileModal-${user.uid}">✏️</button>
+                    data-bs-target="#editProfileModal"
+                    data-uid="${user.uid}">✏️</button>
             </td>
             <td>
                 <button type="button" class="btn-table-delete delete-user-btn"
@@ -374,10 +380,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Delete user ──
     async function handleDelete() {
-        const btn    = this;
-        const userId = btn.dataset.id;
+        const userId = this.dataset.id;
 
-        if (!await grConfirm('This will permanently delete the user. Their courses will be reassigned to you.', 'Delete User')) {
+        if (!confirm('This will permanently delete the user. Their courses will be reassigned to you.')) {
             return;
         }
 

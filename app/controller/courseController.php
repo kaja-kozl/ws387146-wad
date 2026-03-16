@@ -1,5 +1,4 @@
 <?php
-
 namespace app\controller;
 use app\core\Application;
 use app\core\Controller;
@@ -8,71 +7,93 @@ use app\model\CourseModel;
 use app\model\UserModel;
 use app\model\EnrollmentModel;
 use app\core\middlewares\AuthMiddleware;
+use app\core\PermissionsService;
 
-class CourseController extends Controller {
-
-    public function __construct() {
+class CourseController extends Controller
+{
+    public function __construct()
+    {
         $this->registerMiddleware(new AuthMiddleware([
             'listCourses', 'viewCourse', 'addCourse', 'editCourse', 'deleteCourse',
             'enrollCourse', 'unenrollCourse', 'addAttendee', 'removeAttendee'
         ]));
     }
 
-    // Resolves a lecturer UID to a display name from the lecturers map
-    private function resolveLecturerName(string $lecturerUid, array $lecturers): string {
-        if (isset($lecturers[$lecturerUid])) {
-            $l = $lecturers[$lecturerUid];
-            return $l->firstName . ' ' . $l->lastName;
-        }
-        return $lecturerUid;
+    private function serializeCourse(CourseModel $course, string $lecturerName): array
+    {
+        return [
+            'uid'          => $course->uid,
+            'courseTitle'  => $course->courseTitle,
+            'courseDesc'   => $course->courseDesc,
+            'startDate'    => $course->startDate,
+            'endDate'      => $course->endDate,
+            'maxAttendees' => $course->maxAttendees,
+            'lecturerUid'  => $course->lecturer,
+            'lecturer'     => $lecturerName,
+        ];
     }
 
-    public function listCourses(Request $request) {
+    private function resolveLecturerName(string $lecturerUid): string
+    {
+        $user = (new UserModel())->findOne(['uid' => $lecturerUid]);
+        return $user ? $user->firstName . ' ' . $user->lastName : $lecturerUid;
+    }
 
+    public function listCourses(Request $request): string
+    {
         $courseModel     = new CourseModel();
         $userModel       = new UserModel();
         $enrollmentModel = new EnrollmentModel();
+        $currentUser     = Application::$app->user;
 
-        $currentUser = Application::$app->user;
-        $lecturers   = $userModel->getAllLecturers();
+        $lecturers     = $userModel->getAllLecturers();
+        $activeCourses = $courseModel->getActiveCourses();
 
-        $activeCourses   = $courseModel->getActiveCourses();
-        $lecturerCourses = $courseModel->getCoursesByLecturer($currentUser->uid);
-        $enrolledUids    = $enrollmentModel->getEnrolledCourseUids($currentUser->uid);
+        $lecturerCourses = $courseModel->read('*', ['lecturer' => $currentUser->uid]);
+        $enrolledUids    = array_map(
+            fn($row) => $row->courseUid,
+            $enrollmentModel->read('courseUid', ['userUid' => $currentUser->uid])
+        );
         $enrolledCourses = $courseModel->getCoursesByUids($enrolledUids);
 
-        // Merge and deduplicate by uid
+        // Merge and deduplicate lecturer and enrolled courses into activity feed
         $activityMap = [];
         foreach (array_merge($lecturerCourses, $enrolledCourses) as $course) {
             $activityMap[$course->uid] = $course;
         }
-        $userActivity = array_values($activityMap);
-
+        $userActivity   = array_values($activityMap);
         $enrolledUidSet = array_fill_keys($enrolledUids, true);
 
-        // Build enrollment counts for all relevant courses
         $allCourseUids  = array_unique(array_merge(
             array_map(fn($c) => $c->uid, $activeCourses),
             array_map(fn($c) => $c->uid, $userActivity)
         ));
         $enrolledCounts = $enrollmentModel->getEnrolledCountByCourse($allCourseUids);
 
+        // Resolve lecturer names in the controller so the view only handles strings
+        $lecturerOptions = array_map(
+            fn($l) => $l->firstName . ' ' . $l->lastName,
+            $lecturers
+        );
+        foreach ($activeCourses as $course) {
+            $course->lecturerName = $lecturerOptions[$course->lecturer] ?? $course->lecturer;
+        }
+
         return $this->render('displayCourses', [
-            'lecturers'      => $lecturers,
-            'activeCourses'  => $activeCourses,
-            'userActivity'   => $userActivity,
-            'enrolledUidSet' => $enrolledUidSet,
-            'enrolledCounts' => $enrolledCounts,
+            'activeCourses'   => $activeCourses,
+            'userActivity'    => $userActivity,
+            'enrolledUidSet'  => $enrolledUidSet,
+            'enrolledCounts'  => $enrolledCounts,
+            'lecturerOptions' => $lecturerOptions,
         ]);
     }
 
-    public function viewCourse(Request $request) {
-
+    public function viewCourse(Request $request): void
+    {
         $uid = $request->getBody()['uid'] ?? null;
 
         if (!$uid) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'No course ID provided.']);
+            $this->json(['success' => false, 'error' => 'No course ID provided.'], 400);
             return;
         }
 
@@ -81,22 +102,20 @@ class CourseController extends Controller {
         $userModel       = new UserModel();
         $currentUser     = Application::$app->user;
 
-        $course = $courseModel->getCourse($uid);
+        $course = $courseModel->findOne(['uid' => $uid]);
 
         if (!$course) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Course not found.']);
+            $this->json(['success' => false, 'error' => 'Course not found.'], 404);
             return;
         }
 
-        $isPrivileged = ($course->lecturer === $currentUser->uid || $currentUser->accessLevel === 'super_user');
-        $isEnrolled   = $enrollmentModel->isEnrolled($currentUser->uid, $uid);
+        $isPrivileged = $course->lecturer === $currentUser->uid || $currentUser->accessLevel === 'super_user';
+        $isEnrolled   = !empty($enrollmentModel->read('uid', ['userUid' => $currentUser->uid, 'courseUid' => $uid]));
 
         $attendees = [];
         $allUsers  = [];
         if ($isPrivileged) {
-            $enrolledUsers = $enrollmentModel->getEnrolledUsers($uid);
-            foreach ($enrolledUsers as $user) {
+            foreach ($enrollmentModel->getEnrolledUsers($uid) as $user) {
                 $attendees[] = [
                     'uid'      => $user->uid,
                     'name'     => $user->firstName . ' ' . $user->lastName,
@@ -107,212 +126,242 @@ class CourseController extends Controller {
             $allUsers = $userModel->getAllUsersForDropdown();
         }
 
-        $lecturerUser = $userModel->findOne(['uid' => $course->lecturer]);
-        $lecturerName = $lecturerUser
-            ? $lecturerUser->firstName . ' ' . $lecturerUser->lastName
-            : $course->lecturer;
-
-        header('Content-Type: application/json');
-        echo json_encode([
+        $this->json([
             'success'      => true,
             'isEnrolled'   => $isEnrolled,
             'isPrivileged' => $isPrivileged,
             'attendees'    => $attendees,
             'allUsers'     => $allUsers,
-            'course'       => [
-                'uid'          => $course->uid,
-                'courseTitle'  => $course->courseTitle,
-                'courseDesc'   => $course->courseDesc,
-                'startDate'    => $course->startDate,
-                'endDate'      => $course->endDate,
-                'maxAttendees' => $course->maxAttendees,
-                'lecturerUid'  => $course->lecturer,
-                'lecturer'     => $lecturerName,
-            ]
+            'course'       => $this->serializeCourse($course, $this->resolveLecturerName($course->lecturer)),
         ]);
     }
 
-    public function editCourse(Request $request) {
-
+    public function editCourse(Request $request): void
+    {
         $body = $request->getBody();
         $uid  = $body['uid'] ?? null;
 
         if (!$uid) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'No course ID provided.']);
+            $this->json(['success' => false, 'error' => 'No course ID provided.'], 400);
             return;
         }
 
         $courseModel = new CourseModel();
-        $course      = $courseModel->getCourse($uid);
+        $course      = $courseModel->findOne(['uid' => $uid]);
 
         if (!$course) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Course not found.']);
+            $this->json(['success' => false, 'error' => 'Course not found.'], 404);
             return;
         }
 
         $currentUser = Application::$app->user;
-        if ($course->lecturer !== $currentUser->uid && $currentUser->accessLevel !== 'super_user') {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Unauthorised.']);
+        if (!PermissionsService::can('manage_attendees', 'course', $currentUser, $course)) {
+            $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
         }
 
         $course->loadData($body);
 
         if ($course->validate() && $course->updateCourse()) {
-            $userModel    = new UserModel();
-            $lecturerUser = $userModel->findOne(['uid' => $course->lecturer]);
-            $lecturerName = $lecturerUser
-                ? $lecturerUser->firstName . ' ' . $lecturerUser->lastName
-                : $course->lecturer;
-
-            header('Content-Type: application/json');
-            echo json_encode([
+            $this->json([
                 'success' => true,
                 'flash'   => ['type' => 'success', 'message' => 'Course successfully updated.'],
-                'course'  => [
-                    'uid'          => $course->uid,
-                    'courseTitle'  => $course->courseTitle,
-                    'courseDesc'   => $course->courseDesc,
-                    'startDate'    => $course->startDate,
-                    'endDate'      => $course->endDate,
-                    'maxAttendees' => $course->maxAttendees,
-                    'lecturerUid'  => $course->lecturer,
-                    'lecturer'     => $lecturerName,
-                ]
+                'course'  => $this->serializeCourse($course, $this->resolveLecturerName($course->lecturer)),
             ]);
             return;
         }
 
-        header('Content-Type: application/json');
-        echo json_encode([
+        $this->json([
             'success' => false,
             'flash'   => ['type' => 'danger', 'message' => 'Failed to update course.'],
-            'errors'  => array_map(fn($e) => $e[0], $course->errors)
+            'errors'  => array_map(fn($e) => $e[0], $course->errors),
         ]);
     }
 
-    public function deleteCourse(Request $request) {
-
-        $body = $request->getBody();
-        $uid  = $body['uid'] ?? null;
+    public function deleteCourse(Request $request): void
+    {
+        $uid = $request->getBody()['uid'] ?? null;
 
         if (!$uid) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'No course ID provided.']);
+            $this->json(['success' => false, 'error' => 'No course ID provided.'], 400);
             return;
         }
 
         $courseModel = new CourseModel();
-        $course      = $courseModel->getCourse($uid);
+        $course      = $courseModel->findOne(['uid' => $uid]);
 
         if (!$course) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Course not found.']);
+            $this->json(['success' => false, 'error' => 'Course not found.'], 404);
             return;
         }
 
         $currentUser = Application::$app->user;
         if ($course->lecturer !== $currentUser->uid && $currentUser->accessLevel !== 'super_user') {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Unauthorised.']);
+            $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
         }
 
         $deleted = $courseModel->deleteCourse($uid);
 
-        header('Content-Type: application/json');
-        echo json_encode([
+        $this->json([
             'success' => $deleted,
             'flash'   => $deleted
                 ? ['type' => 'success', 'message' => 'Course successfully deleted.']
-                : ['type' => 'danger',  'message' => 'Failed to delete course.']
+                : ['type' => 'danger',  'message' => 'Failed to delete course.'],
         ]);
     }
 
-    public function removeAttendee(Request $request) {
+    public function addCourse(Request $request): void
+    {
+        $courseModel = new CourseModel();
+        $courseModel->loadData($request->getBody());
 
-        $body      = $request->getBody();
-        $courseUid = $body['courseUid'] ?? null;
-        $userUid   = $body['userUid']   ?? null;
+        if ($courseModel->validate() && $courseModel->save()) {
+            $course = $this->serializeCourse($courseModel, $this->resolveLecturerName($courseModel->lecturer));
+            $course['enrolledCount'] = 0;
+            $this->json([
+                'success' => true,
+                'flash'   => ['type' => 'success', 'message' => 'Course successfully created.'],
+                'course'  => $course,
+            ]);
+            return;
+        }
+
+        $this->json([
+            'success' => false,
+            'flash'   => ['type' => 'danger', 'message' => 'Failed to create course.'],
+            'errors'  => array_map(fn($e) => $e[0], $courseModel->errors),
+        ]);
+    }
+
+    public function enrollCourse(Request $request): void
+    {
+        $uid         = $request->getBody()['uid'] ?? null;
         $currentUser = Application::$app->user;
 
-        if (!$courseUid || !$userUid) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Missing course or user ID.']);
+        if (!$uid) {
+            $this->json(['success' => false, 'error' => 'No course ID provided.'], 400);
             return;
         }
 
         $courseModel = new CourseModel();
-        $course      = $courseModel->getCourse($courseUid);
-        $canRemove   = $course && (
-            $course->lecturer === $currentUser->uid ||
-            $currentUser->accessLevel === 'super_user' ||
-            $userUid === $currentUser->uid
+        $course      = $courseModel->findOne(['uid' => $uid]);
+
+        if (!$course) {
+            $this->json(['success' => false, 'error' => 'Course not found.'], 404);
+            return;
+        }
+
+        if ($course->lecturer === $currentUser->uid) {
+            $this->json(['success' => false, 'error' => 'You cannot enrol on a course you are lecturing.'], 403);
+            return;
+        }
+
+        $enrollmentModel = new EnrollmentModel();
+
+        if (!empty($enrollmentModel->read('uid', ['userUid' => $currentUser->uid, 'courseUid' => $uid]))) {
+            $this->json(['success' => false, 'error' => 'Already enrolled on this course.']);
+            return;
+        }
+
+        $enrolled = $enrollmentModel->enroll($currentUser->uid, $uid);
+
+        $this->json([
+            'success' => $enrolled,
+            'flash'   => $enrolled
+                ? ['type' => 'success', 'message' => 'Successfully enrolled on course.']
+                : ['type' => 'danger',  'message' => 'Failed to enrol on course.'],
+        ]);
+    }
+
+    public function unenrollCourse(Request $request): void
+    {
+        $uid         = $request->getBody()['uid'] ?? null;
+        $currentUser = Application::$app->user;
+
+        if (!$uid) {
+            $this->json(['success' => false, 'error' => 'No course ID provided.'], 400);
+            return;
+        }
+
+        $unenrolled = (new EnrollmentModel())->unenroll($currentUser->uid, $uid);
+
+        $this->json([
+            'success' => $unenrolled,
+            'flash'   => $unenrolled
+                ? ['type' => 'success', 'message' => 'Successfully unenrolled from course.']
+                : ['type' => 'danger',  'message' => 'Failed to unenrol from course.'],
+        ]);
+    }
+
+    public function removeAttendee(Request $request): void
+    {
+        $body        = $request->getBody();
+        $courseUid   = $body['courseUid'] ?? null;
+        $userUid     = $body['userUid']   ?? null;
+        $currentUser = Application::$app->user;
+
+        if (!$courseUid || !$userUid) {
+            $this->json(['success' => false, 'error' => 'Missing course or user ID.'], 400);
+            return;
+        }
+
+        $course    = (new CourseModel())->findOne(['uid' => $courseUid]);
+        $canRemove = $course && (
+            PermissionsService::can('manage_attendees', 'course', $currentUser, $course) ||
+            PermissionsService::can('unenrol', 'course', $currentUser)
         );
 
         if (!$canRemove) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Unauthorised.']);
+            $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
         }
 
-        $enrollmentModel = new EnrollmentModel();
-        $removed         = $enrollmentModel->unenroll($userUid, $courseUid);
+        $removed = (new EnrollmentModel())->unenroll($userUid, $courseUid);
 
-        header('Content-Type: application/json');
-        echo json_encode([
+        $this->json([
             'success' => $removed,
             'flash'   => $removed
                 ? ['type' => 'success', 'message' => 'Attendee removed from course.']
-                : ['type' => 'danger',  'message' => 'Failed to remove attendee.']
+                : ['type' => 'danger',  'message' => 'Failed to remove attendee.'],
         ]);
     }
 
-    public function addAttendee(Request $request) {
-
-        $body      = $request->getBody();
-        $courseUid = $body['courseUid'] ?? null;
-        $userUid   = $body['userUid']   ?? null;
-
-        if (!$courseUid || !$userUid) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Missing course or user ID.']);
-            return;
-        }
-
-        $courseModel = new CourseModel();
-        $course      = $courseModel->getCourse($courseUid);
+    public function addAttendee(Request $request): void
+    {
+        $body        = $request->getBody();
+        $courseUid   = $body['courseUid'] ?? null;
+        $userUid     = $body['userUid']   ?? null;
         $currentUser = Application::$app->user;
 
-        if (!$course) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Course not found.']);
+        if (!$courseUid || !$userUid) {
+            $this->json(['success' => false, 'error' => 'Missing course or user ID.'], 400);
             return;
         }
 
-        if ($course->lecturer !== $currentUser->uid && $currentUser->accessLevel !== 'super_user') {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Unauthorised.']);
+        $course = (new CourseModel())->findOne(['uid' => $courseUid]);
+
+        if (!$course) {
+            $this->json(['success' => false, 'error' => 'Course not found.'], 404);
+            return;
+        }
+
+        if (!PermissionsService::can('edit', 'course', $currentUser, $course)) {
+            $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
         }
 
         $enrollmentModel = new EnrollmentModel();
 
-        if ($enrollmentModel->isEnrolled($userUid, $courseUid)) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'User is already enrolled on this course.']);
+        if (!empty($enrollmentModel->read('uid', ['userUid' => $userUid, 'courseUid' => $courseUid]))) {
+            $this->json(['success' => false, 'error' => 'User is already enrolled on this course.']);
             return;
         }
 
-        $enrolled  = $enrollmentModel->enroll($userUid, $courseUid);
-        $userModel = new UserModel();
-        $user      = $userModel->findOne(['uid' => $userUid]);
+        $enrolled = $enrollmentModel->enroll($userUid, $courseUid);
+        $user     = (new UserModel())->findOne(['uid' => $userUid]);
 
-        header('Content-Type: application/json');
-        echo json_encode([
+        $this->json([
             'success'  => $enrolled,
             'flash'    => $enrolled
                 ? ['type' => 'success', 'message' => 'User successfully added to course.']
@@ -322,115 +371,8 @@ class CourseController extends Controller {
                 'name'     => $user->firstName . ' ' . $user->lastName,
                 'email'    => $user->email,
                 'jobTitle' => $user->jobTitle,
-            ] : null
-        ]);
-    }
-
-    public function addCourse(Request $request) {
-
-        $courseModel = new CourseModel();
-        $courseModel->loadData($request->getBody());
-
-        if ($courseModel->validate() && $courseModel->save()) {
-            $userModel    = new UserModel();
-            $lecturerUser = $userModel->findOne(['uid' => $courseModel->lecturer]);
-            $lecturerName = $lecturerUser
-                ? $lecturerUser->firstName . ' ' . $lecturerUser->lastName
-                : $courseModel->lecturer;
-
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => true,
-                'flash'   => ['type' => 'success', 'message' => 'Course successfully created.'],
-                'course'  => [
-                    'uid'          => $courseModel->uid,
-                    'courseTitle'  => $courseModel->courseTitle,
-                    'startDate'    => $courseModel->startDate,
-                    'maxAttendees' => $courseModel->maxAttendees,
-                    'lecturerUid'   => $courseModel->lecturer,
-                    'lecturer'      => $lecturerName,
-                    'enrolledCount' => 0,
-                ]
-            ]);
-            return;
-        }
-
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'flash'   => ['type' => 'danger', 'message' => 'Failed to create course.'],
-            'errors'  => array_map(fn($e) => $e[0], $courseModel->errors)
-        ]);
-    }
-
-    public function enrollCourse(Request $request) {
-
-        $uid         = $request->getBody()['uid'] ?? null;
-        $currentUser = Application::$app->user;
-
-        if (!$uid) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'No course ID provided.']);
-            return;
-        }
-
-        $courseModel = new CourseModel();
-        $course      = $courseModel->getCourse($uid);
-
-        if (!$course) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Course not found.']);
-            return;
-        }
-
-        // Lecturers cannot enrol on their own course
-        if ($course->lecturer === $currentUser->uid) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'You cannot enrol on a course you are lecturing.']);
-            return;
-        }
-
-        $enrollmentModel = new EnrollmentModel();
-
-        if ($enrollmentModel->isEnrolled($currentUser->uid, $uid)) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Already enrolled on this course.']);
-            return;
-        }
-
-        $enrolled = $enrollmentModel->enroll($currentUser->uid, $uid);
-
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => $enrolled,
-            'flash'   => $enrolled
-                ? ['type' => 'success', 'message' => 'Successfully enrolled on course.']
-                : ['type' => 'danger',  'message' => 'Failed to enrol on course.']
-        ]);
-    }
-
-    public function unenrollCourse(Request $request) {
-
-        $uid         = $request->getBody()['uid'] ?? null;
-        $currentUser = Application::$app->user;
-
-        if (!$uid) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'No course ID provided.']);
-            return;
-        }
-
-        $enrollmentModel = new EnrollmentModel();
-        $unenrolled      = $enrollmentModel->unenroll($currentUser->uid, $uid);
-
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => $unenrolled,
-            'flash'   => $unenrolled
-                ? ['type' => 'success', 'message' => 'Successfully unenrolled from course.']
-                : ['type' => 'danger',  'message' => 'Failed to unenrol from course.']
+            ] : null,
         ]);
     }
 }
-
 ?>

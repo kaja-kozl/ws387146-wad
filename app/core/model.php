@@ -9,6 +9,7 @@ abstract class Model {
     public const RULE_MATCH = 'match';
     public const RULE_UNIQUE = 'unique';
     public const RULE_UNIQUE_EXCEPT = 'unique_except';
+    public const RULE_PASSWORD_COMPLEXITY = 'password_complexity';
 
     # Loads data from an array and assigns valid variables as attributes in an object
     # Used with form inputs
@@ -89,6 +90,18 @@ abstract class Model {
                         $this->addError($attribute, self::RULE_UNIQUE_EXCEPT, ['attribute' => $attribute]);
                     }
                 }
+
+                if ($ruleName === self::RULE_PASSWORD_COMPLEXITY) {
+                    if (
+                        strlen($value) < 8 ||
+                        !preg_match('/[A-Z]/', $value) ||
+                        !preg_match('/[a-z]/', $value) ||
+                        !preg_match('/[0-9]/', $value) ||
+                        !preg_match('/[\W_]/', $value)  // special character
+                    ) {
+                        $this->addError($attribute, self::RULE_PASSWORD_COMPLEXITY);
+                    }
+                }
             }
         }
         return empty($this->errors);
@@ -115,7 +128,8 @@ abstract class Model {
             self::RULE_MAX => 'Max length of this field must be {max}',
             self::RULE_MATCH => 'This field must be the same as {match}',
             self::RULE_UNIQUE => 'Record with this {attribute} already exists',
-            self::RULE_UNIQUE_EXCEPT => 'Record with this {attribute} already exists'
+            self::RULE_UNIQUE_EXCEPT => 'Record with this {attribute} already exists',
+            self::RULE_PASSWORD_COMPLEXITY => 'Password must be at least 8 characters and contain an uppercase letter, lowercase letter, number, and special character'
         ];
     }
 

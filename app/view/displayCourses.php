@@ -77,12 +77,12 @@ $currentUser = Application::$app->user;
                         <div class="form-group mb-2">
                             <label>Lecturer</label>
                             <?php if ($currentUser->accessLevel === 'super_user'): ?>
-                                <select name="lecturer" id="edit-lecturer" class="form-control">
-                                    <option value="">Select lecturer</option>
-                                    <?php foreach ($lecturers ?? [] as $uid => $lecturer): ?>
-                                        <option value="<?= htmlspecialchars($uid) ?>"><?= htmlspecialchars($lecturer->firstName . ' ' . $lecturer->lastName) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                            <select name="lecturer" id="edit-lecturer" class="form-control">
+                                <option value="">Select lecturer</option>
+                                <?php foreach ($lecturerOptions ?? [] as $uid => $name): ?>
+                                    <option value="<?= htmlspecialchars($uid) ?>"><?= htmlspecialchars($name) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                             <?php else: ?>
                                 <input type="text" class="form-control" value="<?= htmlspecialchars($currentUser->firstName . ' ' . $currentUser->lastName) ?>" readonly>
                                 <input type="hidden" name="lecturer" id="edit-lecturer" value="<?= htmlspecialchars($currentUser->uid) ?>">
@@ -118,13 +118,8 @@ $currentUser = Application::$app->user;
                         <?php echo $form->field($course, 'endDate')->dateField() ?>
                     </div>
                     <?php echo $form->field($course, 'maxAttendees')->numberField() ?>
-                    <?php if ($currentUser->accessLevel === 'super_user'):
-                        $lecturerOptions = [];
-                        foreach ($lecturers ?? [] as $uid => $lecturer) {
-                            $lecturerOptions[$uid] = $lecturer->firstName . ' ' . $lecturer->lastName;
-                        }
-                    ?>
-                        <?php echo $form->field($course, 'lecturer')->dropDownField($lecturerOptions) ?>
+                    <?php if ($currentUser->accessLevel === 'super_user'): ?>
+                        <?php echo $form->field($course, 'lecturer')->dropDownField($lecturerOptions ?? []) ?>
                     <?php else: ?>
                         <div class="form-group mb-2">
                             <label>Lecturer</label>
