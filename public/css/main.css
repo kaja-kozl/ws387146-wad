@@ -65,11 +65,11 @@ body {
 
 .navbar-logout {
     color: #f4a015;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-decoration: none;
-    letter-spacing: 0.03em;
-    transition: color 0.15s;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
 }
 
 .navbar-logout:hover {

@@ -80,11 +80,14 @@ class CourseController extends Controller
         }
 
         return $this->render('displayCourses', [
-            'activeCourses'   => $activeCourses,
-            'userActivity'    => $userActivity,
-            'enrolledUidSet'  => $enrolledUidSet,
-            'enrolledCounts'  => $enrolledCounts,
-            'lecturerOptions' => $lecturerOptions,
+            'activeCourses'      => $activeCourses,
+            'userActivity'       => $userActivity,
+            'enrolledUidSet'     => $enrolledUidSet,
+            'enrolledCounts'     => $enrolledCounts,
+            'lecturerOptions'    => $lecturerOptions,
+            'canAddCourse'       => PermissionsService::can('add', 'course'),
+            'canSelectLecturer'  => PermissionsService::atLeast('super_user'),
+            'cardsPerPage'       => PermissionsService::atLeast('admin') ? 4 : 6,
         ]);
     }
 

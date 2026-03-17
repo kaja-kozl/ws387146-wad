@@ -58,7 +58,7 @@ $app->router->post('/delUser', [UserController::class, 'deleteUser']);
 $app->router->post('/editUser', [UserController::class, 'editUser']);
 $app->router->get('/getUsers', [UserController::class, 'getUsers']);
 
-$app->router->get('/logout', [AuthController::class, 'logout']);
+$app->router->post('/logout', [AuthController::class, 'logout']);
 
 # Actually creates the application and runs it
 $app->run();
