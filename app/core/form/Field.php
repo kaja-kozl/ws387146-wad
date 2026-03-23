@@ -8,7 +8,7 @@ class Field {
     public const TYPE_PASSWORD = 'password';
     public const TYPE_NUMBER = 'number';
     public const TYPE_EMAIL = 'email';
-    public const TYPE_DATE = 'datetime-local" min="2024-06-01T08:30';
+    public const TYPE_DATE = 'datetime-local';
     public const TYPE_SELECT = 'select';
     public const TYPE_TEXTAREA = 'textarea';
 
@@ -55,13 +55,13 @@ class Field {
                 </div>
             </div>
         ', 
-            $this->model->labels()[$this->attribute] ?? $this->attribute, 
-            $this->type,
-            $this->attribute,
-            $value,
+            htmlspecialchars($this->model->labels()[$this->attribute] ?? $this->attribute), 
+            htmlspecialchars($this->type),
+            htmlspecialchars($this->attribute),
+            htmlspecialchars($value),
             $class ? ' class="' . $class . '"' : '',
             $this->readonly ? 'readonly' : '',  // Native HTML readonly for inputs
-            $this->model->getFirstError($this->attribute)
+            htmlspecialchars($this->model->getFirstError($this->attribute))
         );
     }
 
@@ -94,11 +94,14 @@ class Field {
         $options = '';
         foreach ($this->options as $value => $label) {
             $selected = $currentValue == $value ? 'selected' : '';
-            $options .= sprintf('<option value="%s" %s>%s</option>', $value, $selected, $label);
+            $options .= sprintf(
+                '<option value="%s" %s>%s</option>', 
+                htmlspecialchars($value), 
+                $selected, 
+                htmlspecialchars($label)
+            );
         }
 
-        // <select> doesn't support readonly natively — instead we render a visible
-        // disabled select for appearance, plus a hidden input to actually submit the value
         if ($this->readonly) {
             return sprintf('
                 <div class="form-group">

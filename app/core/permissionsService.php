@@ -11,11 +11,11 @@ class PermissionsService
 
     private const PERMISSIONS = [
         'super_user' => [
-            'course' => ['add', 'list', 'view', 'edit', 'delete', 'enrol', 'unenrol', 'manage_attendees'],
+            'course' => ['add', 'list', 'view', 'edit', 'delete', 'enrol', 'unenrol', 'manage_attendees', 'view_attendees'],
             'user'   => ['create', 'list', 'edit', 'delete'],
         ],
         'admin' => [
-            'course' => ['add', 'list', 'view', 'edit.own', 'delete.own', 'enrol', 'unenrol', 'manage_attendees.own'],
+            'course' => ['add', 'list', 'view', 'edit.own', 'delete.own', 'enrol', 'unenrol', 'manage_attendees.own', 'view_attendees.own'],
             'user'   => ['list', 'edit.own', 'delete.own'],
         ],
         'user' => [
@@ -59,11 +59,20 @@ class PermissionsService
     private static function isOwner(object $user, object $subject): bool
     {
         if (property_exists($subject, 'lecturer')) {
-            return $subject->lecturer === $user->uid;
+            $left  = (string)$subject->lecturer;
+            $right = (string)$user->uid;
+            $result = trim($left) === trim($right);
+            error_log("DEBUG isOwner: lecturer=\"$left\" userUid=\"$right\" -> $result");
+            return $result;
         }
         if (property_exists($subject, 'uid')) {
-            return $subject->uid === $user->uid;
+            $left  = (string)$subject->uid;
+            $right = (string)$user->uid;
+            $result = trim($left) === trim($right);
+            error_log("DEBUG isOwner: uid=\"$left\" userUid=\"$right\" -> $result");
+            return $result;
         }
+        error_log("DEBUG isOwner: no lecturer/uid => false");
         return false;
     }
 }

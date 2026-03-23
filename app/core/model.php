@@ -10,6 +10,7 @@ abstract class Model {
     public const RULE_UNIQUE = 'unique';
     public const RULE_UNIQUE_EXCEPT = 'unique_except';
     public const RULE_PASSWORD_COMPLEXITY = 'password_complexity';
+    public const RULE_DATE_MIN = 'date_min';
 
     # Loads data from an array and assigns valid variables as attributes in an object
     # Used with form inputs
@@ -32,6 +33,7 @@ abstract class Model {
     public array $errors = [];
 
     # All rules and how they are validated
+    # When called, it checks through all the rules that exist for that model and verifies against them
     public function validate() {
         foreach ($this->rules() as $attribute => $rules) {
             $value = $this->{$attribute};
@@ -102,6 +104,14 @@ abstract class Model {
                         $this->addError($attribute, self::RULE_PASSWORD_COMPLEXITY);
                     }
                 }
+
+                if ($ruleName === self::RULE_MATCH && $value !== $this->{$rule['match']}) {
+                    $this->addError($attribute, self::RULE_MATCH, $rule);
+                }
+
+                if ($ruleName === self::RULE_DATE_MIN && $value < $this->{$rule['compare_date']}) {
+                    $this->addError($attribute, self::RULE_DATE_MIN, $rule);
+                }
             }
         }
         return empty($this->errors);
@@ -129,7 +139,8 @@ abstract class Model {
             self::RULE_MATCH => 'This field must be the same as {match}',
             self::RULE_UNIQUE => 'Record with this {attribute} already exists',
             self::RULE_UNIQUE_EXCEPT => 'Record with this {attribute} already exists',
-            self::RULE_PASSWORD_COMPLEXITY => 'Password must be at least 8 characters and contain an uppercase letter, lowercase letter, number, and special character'
+            self::RULE_PASSWORD_COMPLEXITY => 'Password must be at least 8 characters and contain an uppercase letter, lowercase letter, number, and special character',
+            self::RULE_DATE_MIN => 'End date must be after start date'
         ];
     }
 

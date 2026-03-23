@@ -39,6 +39,7 @@ class UserController extends Controller
         ]);
     }
 
+    // Called by AJAX when an edit user form is submitted
     public function editUser(Request $request, Response $response): void
     {
         if (!$request->isPost()) {
@@ -46,18 +47,22 @@ class UserController extends Controller
             return;
         }
 
+        // Creates a new form object (different validation rules)
         $editForm = new EditUserForm();
-        $editForm->loadData($request->getBody());
+        $editForm->loadData($request->getBody()); // Loads the data from the AJAX request
 
+        // Validates the data against the rules, and attempts to save it using the dbModal if it passed
         if ($editForm->validate() && $editForm->save()) {
-            // Re-fetch from DB and refresh session if the logged-in user edited themselves
+            // Re-fetch from DB and refresh session attributes if the logged-in user edited themselves
             if ($editForm->uid === Application::$app->user->uid) {
                 $updated = UserModel::findOne(['uid' => $editForm->uid]);
                 Application::$app->session->set('user', $updated->uid);
             }
 
+            // Returns a JSON response with the updated user data to update the UI
             $this->json([
                 'success' => true,
+                'flash'   => ['type' => 'success', 'message' => 'User updated successfully'],
                 'user'    => [
                     'uid'         => $editForm->uid,
                     'email'       => $editForm->email,
@@ -70,6 +75,7 @@ class UserController extends Controller
             return;
         }
 
+        // If validation/saving failed, return a JSON response with errors that include the users input failures
         $this->json([
             'success' => false,
             'flash'   => ['type' => 'danger', 'message' => 'Failed to update user'],

@@ -1,3 +1,4 @@
+// Attaches event listeners to login form
 document.addEventListener('DOMContentLoaded', () => {
     const form    = document.querySelector('#login-form');
     const btn     = document.querySelector('#login-btn');
@@ -21,11 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
         form.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
     }
 
+    // Handles form submissions, shows loading state, and displays errors
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         clearError();
+
+        // Show a loading spinner while waiting for the response
         setLoading(true);
 
+        // POST request is sent to the same route with the form data
         fetch('', {
             method: 'POST',
             body:   new FormData(form)
@@ -33,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                // Keep spinner going during redirect
+                // Redirects to the specified URL on successful login
                 window.location.href = data.redirect;
                 return;
             }

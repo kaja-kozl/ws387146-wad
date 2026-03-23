@@ -25,7 +25,7 @@ class CourseModel extends dbModel
         return [
             'courseTitle'  => [self::RULE_REQUIRED, [self::RULE_MAX, 'max' => 32]],
             'startDate'    => [self::RULE_REQUIRED],
-            'endDate'      => [self::RULE_REQUIRED],
+            'endDate'      => [[self::RULE_REQUIRED], [self::RULE_DATE_MIN, 'compare_date' => 'startDate']],
             'maxAttendees' => [self::RULE_REQUIRED],
             'courseDesc'   => [self::RULE_REQUIRED, [self::RULE_MAX, 'max' => 255]],
             'lecturer'     => [self::RULE_REQUIRED],

@@ -28,6 +28,7 @@ class EnrollmentModel extends dbModel
         ];
     }
 
+    // Enrolls a user on a course by creating a new record in the enrollments table
     public function enroll(string $userUid, string $courseUid): bool
     {
         $this->userUid   = $userUid;

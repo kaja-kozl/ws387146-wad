@@ -7,7 +7,7 @@ $currentUser = Application::$app->user;
 
 <link rel="stylesheet" href="/css/displayUsers.css">
 
-<!-- ── Shared edit modal ── -->
+<!-- Shared edit modal (for self and other users if user has permission) -->
 <div class="modal fade" id="editProfileModal" tabindex="-1"
     aria-labelledby="editProfileModalLabel" aria-hidden="true">
 <div class="modal-dialog" role="document">
@@ -18,6 +18,7 @@ $currentUser = Application::$app->user;
     </div>
     <div class="modal-body">
         <?php
+        // Creates a form out of the modal
         $dummyUser = new UserModel();
         $form = \app\core\form\Form::begin('/editUser', "post", [
             'class'      => 'edit-user-form',
@@ -25,6 +26,7 @@ $currentUser = Application::$app->user;
             'novalidate' => 'novalidate',
         ]);
         ?>
+            <!-- UID is sent for identification, fields are filled in based on the selected user -->
             <input type="hidden" name="uid" aria-hidden="true">
             <?php echo $form->field($dummyUser, 'email'); ?>
             <?php echo $form->field($dummyUser, 'password')->passwordField()->setValue("Password"); ?>
@@ -51,6 +53,7 @@ $currentUser = Application::$app->user;
 </div>
 </div>
 
+<!-- Enables there to be multiple tabs on the same page -->
 <div class="users-wrap">
 
     <ul class="nav nav-tabs" id="profileTabs" role="tablist" aria-label="Profile sections">
@@ -60,6 +63,8 @@ $currentUser = Application::$app->user;
                 type="button" role="tab"
                 aria-controls="profile" aria-selected="true">Your Profile</button>
         </li>
+        
+        <!-- Only show the "Other Users" tab if the user has permission to list users -->
         <?php if ($canListUsers): ?>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="users-tab"
@@ -72,15 +77,17 @@ $currentUser = Application::$app->user;
 
     <div class="tab-content tab-content-fill mt-2">
 
-        <!-- ── Your Profile tab ── -->
+        <!-- Your Profile tab, viewable to all users -->
         <div class="tab-pane fade show active tab-pane-fill profile-tab-pane"
             id="profile" role="tabpanel" aria-labelledby="profile-tab">
             <div id="profile-info" class="profile-card" aria-label="Your profile information">
-                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Email</small><br><?= htmlspecialchars($currentUser->email) ?></p>
-                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">First Name</small><br><?= htmlspecialchars($currentUser->firstName) ?></p>
-                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Last Name</small><br><?= htmlspecialchars($currentUser->lastName) ?></p>
-                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Job Title</small><br><?= htmlspecialchars($currentUser->jobTitle) ?></p>
-                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;letter-spacing:0.06em;">Access Level</small><br><?= htmlspecialchars($currentUser->accessLevel) ?></p>
+                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;">Email</small><br><?= htmlspecialchars($currentUser->email) ?></p>
+                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;">First Name</small><br><?= htmlspecialchars($currentUser->firstName) ?></p>
+                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;">Last Name</small><br><?= htmlspecialchars($currentUser->lastName) ?></p>
+                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;">Job Title</small><br><?= htmlspecialchars($currentUser->jobTitle) ?></p>
+                <p><small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;">Access Level</small><br><?= htmlspecialchars($currentUser->accessLevel) ?></p>
+                
+                <!-- Opens the edit profile modal (see modal code above) through the JS event listener to btn-edit-profile -->
                 <button class="btn-edit-profile"
                     data-bs-toggle="modal"
                     data-bs-target="#editProfileModal"
@@ -89,7 +96,7 @@ $currentUser = Application::$app->user;
             </div>
         </div>
 
-        <!-- ── Other Users tab ── -->
+        <!-- Other Users tab -->
         <?php if ($canListUsers): ?>
         <div class="tab-pane fade tab-pane-fill"
             id="users" role="tabpanel" aria-labelledby="users-tab" aria-live="polite">
@@ -130,7 +137,7 @@ $currentUser = Application::$app->user;
     </div>
 </div>
 
-<!-- ── Create User Modal ── -->
+<!-- Create User Modal -->
 <?php if ($canListUsers): ?>
 <div class="modal fade" id="createUserModal" tabindex="-1"
     aria-labelledby="createUserModalLabel" aria-hidden="true">
@@ -154,7 +161,9 @@ $currentUser = Application::$app->user;
                 echo $form->field($newUser, 'firstName');
                 echo $form->field($newUser, 'lastName');
                 echo $form->field($newUser, 'jobTitle')->dropDownField(UserModel::JOB_TITLES);
-                echo $form->field($newUser, 'accessLevel')->dropDownField(UserModel::ACCESS_LEVELS);
+                $accessLevel_field = $form->field($newUser, 'accessLevel')->dropDownField(UserModel::ACCESS_LEVELS);
+                if (!$canEditAccessLevel) $accessLevel_field->readonly();
+                echo $accessLevel_field;
                 ?>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancel creating user">Cancel</button>

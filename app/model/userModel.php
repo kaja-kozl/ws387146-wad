@@ -25,13 +25,13 @@ class UserModel extends User
         'super_user' => 'Super User',
     ];
 
-    public string $uid             = '';
-    public string $email           = '';
-    public string $firstName       = '';
-    public string $lastName        = '';
-    public string $jobTitle        = '';
-    public string $accessLevel     = '';
-    public string $password        = '';
+    public string $uid = '';
+    public string $email = '';
+    public string $firstName = '';
+    public string $lastName = '';
+    public string $jobTitle = '';
+    public string $accessLevel = '';
+    public string $password = '';
     public string $confirmPassword = '';
 
     public static function tableName(): string  { return 'users'; }
@@ -44,25 +44,25 @@ class UserModel extends User
     public function rules(): array
     {
         return [
-            'firstName'       => [self::RULE_REQUIRED],
-            'lastName'        => [self::RULE_REQUIRED],
-            'email'           => [self::RULE_REQUIRED, self::RULE_EMAIL, [self::RULE_UNIQUE, 'class' => self::class]],
+            'firstName' => [self::RULE_REQUIRED],
+            'lastName' => [self::RULE_REQUIRED],
+            'email' => [self::RULE_REQUIRED, self::RULE_EMAIL, [self::RULE_UNIQUE, 'class' => self::class]],
             'password' => [self::RULE_REQUIRED, self::RULE_PASSWORD_COMPLEXITY],
             'confirmPassword' => [self::RULE_REQUIRED, [self::RULE_MATCH, 'match' => 'password']],
-            'jobTitle'        => [self::RULE_REQUIRED],
+            'jobTitle' => [self::RULE_REQUIRED],
         ];
     }
 
     public function labels(): array
     {
         return [
-            'firstName'       => 'First Name',
-            'lastName'        => 'Last Name',
-            'email'           => 'Email Address',
-            'password'        => 'Password',
+            'firstName' => 'First Name',
+            'lastName' => 'Last Name',
+            'email' => 'Email Address',
+            'password' => 'Password',
             'confirmPassword' => 'Confirm Password',
-            'jobTitle'        => 'Job Title',
-            'accessLevel'     => 'Access Level',
+            'jobTitle' => 'Job Title',
+            'accessLevel' => 'Access Level',
         ];
     }
 
@@ -72,6 +72,7 @@ class UserModel extends User
         return parent::save();
     }
 
+    // Reads every users UID, firstName and lastName and returns it in a format for dropdowns
     public function getAllUsersForDropdown(): array
     {
         $users = $this->read('uid, firstName, lastName');

@@ -39,6 +39,7 @@ class CourseController extends Controller
         return $user ? $user->firstName . ' ' . $user->lastName : $lecturerUid;
     }
 
+    // Fetches all the courses from the database and categorises them into different groups
     public function listCourses(Request $request): string
     {
         $courseModel     = new CourseModel();
@@ -47,13 +48,17 @@ class CourseController extends Controller
         $currentUser     = Application::$app->user;
 
         $lecturers     = $userModel->getAllLecturers();
+        // The general list of all courses that where the start date is in the future
         $activeCourses = $courseModel->getActiveCourses();
 
+        // Courses where the user is the lecturer of the course
         $lecturerCourses = $courseModel->read('*', ['lecturer' => $currentUser->uid]);
+        // Courses where the user is enrolled but not the lecturer
         $enrolledUids    = array_map(
             fn($row) => $row->courseUid,
             $enrollmentModel->read('courseUid', ['userUid' => $currentUser->uid])
         );
+        // Fetches the details of the courses that the user is enrolled on
         $enrolledCourses = $courseModel->getCoursesByUids($enrolledUids);
 
         // Merge and deduplicate lecturer and enrolled courses into activity feed
@@ -80,19 +85,20 @@ class CourseController extends Controller
         }
 
         return $this->render('displayCourses', [
-            'activeCourses'      => $activeCourses,
-            'userActivity'       => $userActivity,
-            'enrolledUidSet'     => $enrolledUidSet,
-            'enrolledCounts'     => $enrolledCounts,
-            'lecturerOptions'    => $lecturerOptions,
-            'canAddCourse'       => PermissionsService::can('add', 'course'),
-            'canSelectLecturer'  => PermissionsService::atLeast('super_user'),
-            'cardsPerPage'       => PermissionsService::atLeast('admin') ? 4 : 6,
+            'activeCourses'      => $activeCourses, // For the main listing of courses
+            'userActivity'       => $userActivity, // For Your Activity section
+            'enrolledUidSet'     => $enrolledUidSet, // Identifies which courses the user is enrolled on
+            'enrolledCounts'     => $enrolledCounts, // Displays number of attendees for each course
+            'lecturerOptions'    => $lecturerOptions, // Lecturer dropdown
+            'canAddCourse'       => PermissionsService::can('add', 'course'), // Permission to add a course
+            'canSelectLecturer'  => PermissionsService::atLeast('super_user'), // Permission to select any lecturer on the course modals
         ]);
     }
 
+    // Fetching the course details from the database and returning as JSON to populate the course details modal
     public function viewCourse(Request $request): void
     {
+        // Checks that a valid ID is provided
         $uid = $request->getBody()['uid'] ?? null;
 
         if (!$uid) {
@@ -100,11 +106,9 @@ class CourseController extends Controller
             return;
         }
 
+        // Creates all necessary objects to fetch the course details, attendees and check the user's permissions
         $courseModel     = new CourseModel();
-        $enrollmentModel = new EnrollmentModel();
-        $userModel       = new UserModel();
-        $currentUser     = Application::$app->user;
-
+        // Checks that the course exists
         $course = $courseModel->findOne(['uid' => $uid]);
 
         if (!$course) {
@@ -112,12 +116,24 @@ class CourseController extends Controller
             return;
         }
 
-        $isPrivileged = $course->lecturer === $currentUser->uid || $currentUser->accessLevel === 'super_user';
+        $currentUser     = Application::$app->user;
+        $enrollmentModel = new EnrollmentModel();
+
+        // Checks if current user can view attendees
+        $canViewAttendees = PermissionsService::can('view_attendees', 'course', $course);
+
+        // Identifies if they are enrolled onto the course
         $isEnrolled   = !empty($enrollmentModel->read('uid', ['userUid' => $currentUser->uid, 'courseUid' => $uid]));
 
         $attendees = [];
         $allUsers  = [];
-        if ($isPrivileged) {
+
+        // Returns how many users have already enrolled onto the course
+        $enrolledCount = $enrollmentModel->getEnrolledCountByCourse([$uid])[$uid] ?? 0;
+
+       // Gets extra information of the attendees if necessary 
+        if ($canViewAttendees) {
+            $userModel = new UserModel();
             foreach ($enrollmentModel->getEnrolledUsers($uid) as $user) {
                 $attendees[] = [
                     'uid'      => $user->uid,
@@ -130,12 +146,13 @@ class CourseController extends Controller
         }
 
         $this->json([
-            'success'      => true,
-            'isEnrolled'   => $isEnrolled,
-            'isPrivileged' => $isPrivileged,
-            'attendees'    => $attendees,
-            'allUsers'     => $allUsers,
-            'course'       => $this->serializeCourse($course, $this->resolveLecturerName($course->lecturer)),
+            'success' => true,
+            'isEnrolled' => $isEnrolled,
+            'isPrivileged' => $canViewAttendees,
+            'attendees' => $attendees,
+            'allUsers' => $allUsers,
+            'enrolledCount' => $enrolledCount,
+            'course' => $this->serializeCourse($course, $this->resolveLecturerName($course->lecturer)),
         ]);
     }
 
@@ -181,15 +198,18 @@ class CourseController extends Controller
         ]);
     }
 
+    // Removes a course from the database and returns a success/failure response
     public function deleteCourse(Request $request): void
     {
         $uid = $request->getBody()['uid'] ?? null;
 
+        // Ensures that a course ID is provided in the request
         if (!$uid) {
             $this->json(['success' => false, 'error' => 'No course ID provided.'], 400);
             return;
         }
 
+        // Ensures that that course exists
         $courseModel = new CourseModel();
         $course      = $courseModel->findOne(['uid' => $uid]);
 
@@ -198,12 +218,14 @@ class CourseController extends Controller
             return;
         }
 
+        // Checks the permissions of the user
         $currentUser = Application::$app->user;
-        if ($course->lecturer !== $currentUser->uid && $currentUser->accessLevel !== 'super_user') {
+        if (!PermissionsService::can('delete', 'course', $currentUser, $course)) {
             $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
         }
 
+        // Sends the course to the model to be deleted
         $deleted = $courseModel->deleteCourse($uid);
 
         $this->json([
@@ -237,16 +259,19 @@ class CourseController extends Controller
         ]);
     }
 
+    // Backend API for enrolling on a course, called by courses.js on enroll button click
     public function enrollCourse(Request $request): void
     {
         $uid         = $request->getBody()['uid'] ?? null;
         $currentUser = Application::$app->user;
 
+        // Error checking to nesure 
         if (!$uid) {
             $this->json(['success' => false, 'error' => 'No course ID provided.'], 400);
             return;
         }
 
+        //  course exists/course ID is valid,
         $courseModel = new CourseModel();
         $course      = $courseModel->findOne(['uid' => $uid]);
 
@@ -255,18 +280,27 @@ class CourseController extends Controller
             return;
         }
 
+        //  user isn't the lecturer and 
         if ($course->lecturer === $currentUser->uid) {
             $this->json(['success' => false, 'error' => 'You cannot enrol on a course you are lecturing.'], 403);
             return;
         }
 
+        //  isn't already enrolled
         $enrollmentModel = new EnrollmentModel();
+
+        $currentEnrolled = $enrollmentModel->getEnrolledCountByCourse([$uid])[$uid] ?? 0;
+        if ($currentEnrolled >= $course->maxAttendees) {
+            $this->json(['success' => false, 'error' => 'Course is at maximum capacity.'], 400);
+            return;
+        }
 
         if (!empty($enrollmentModel->read('uid', ['userUid' => $currentUser->uid, 'courseUid' => $uid]))) {
             $this->json(['success' => false, 'error' => 'Already enrolled on this course.']);
             return;
         }
 
+        // Uses the EnrollmentModel to create the record in the database - would ideally be a service
         $enrolled = $enrollmentModel->enroll($currentUser->uid, $uid);
 
         $this->json([
@@ -274,6 +308,7 @@ class CourseController extends Controller
             'flash'   => $enrolled
                 ? ['type' => 'success', 'message' => 'Successfully enrolled on course.']
                 : ['type' => 'danger',  'message' => 'Failed to enrol on course.'],
+            'enrolledCount' => $enrolled ? $enrollmentModel->getEnrolledCountByCourse([$uid])[$uid] : null,
         ]);
     }
 
@@ -294,6 +329,7 @@ class CourseController extends Controller
             'flash'   => $unenrolled
                 ? ['type' => 'success', 'message' => 'Successfully unenrolled from course.']
                 : ['type' => 'danger',  'message' => 'Failed to unenrol from course.'],
+            'enrolledCount' => $unenrolled ? (new EnrollmentModel())->getEnrolledCountByCourse([$uid])[$uid] ?? 0 : null,
         ]);
     }
 
@@ -355,6 +391,12 @@ class CourseController extends Controller
         }
 
         $enrollmentModel = new EnrollmentModel();
+
+        $currentEnrolled = $enrollmentModel->getEnrolledCountByCourse([$courseUid])[$courseUid] ?? 0;
+        if ($currentEnrolled >= $course->maxAttendees) {
+            $this->json(['success' => false, 'error' => 'Course is at maximum capacity.'], 400);
+            return;
+        }
 
         if (!empty($enrollmentModel->read('uid', ['userUid' => $userUid, 'courseUid' => $courseUid]))) {
             $this->json(['success' => false, 'error' => 'User is already enrolled on this course.']);

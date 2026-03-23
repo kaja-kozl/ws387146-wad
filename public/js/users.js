@@ -12,17 +12,19 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => flash.remove(), 3500);
     }
 
-    // ── Populate shared edit modal before it opens ──
+    // Populate edit modal before it opens
     const editModal = document.querySelector('#editProfileModal');
     editModal?.addEventListener('show.bs.modal', function(e) {
-        const uid  = e.relatedTarget?.dataset.uid;
+        const uid  = e.relatedTarget?.dataset.uid; // Holds the uid of the user to edit
         if (!uid) return;
 
+        // Finds the user in the allUsers cache / uses self, otherwise if none is found returns false
         const user = allUsers.find(u => u.uid === uid) ||
             (uid === currentUserUid ? currentUserData : null);
 
         if (!user) return;
 
+        // Sets the form values based on the user to edit (except password, which is empty)
         const f = this.querySelector('.edit-user-form');
         f.querySelector('[name="uid"]').value             = user.uid;
         f.querySelector('[name="email"]').value           = user.email;
@@ -33,12 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
         f.querySelector('[name="password"]').value        = 'Password';
         f.querySelector('[name="confirmPassword"]').value = '';
 
-        // Reset confirmPassword visibility
+        // Reset confirmPassword visibility (only shows when the password is changed from default value)
         const confirmGroup = f.querySelector('[name="confirmPassword"]')?.closest('.form-group');
         if (confirmGroup) confirmGroup.style.display = 'none';
     });
 
-    // ── confirmPassword toggle ──
+    // confirmPassword toggle
     const editForm = document.querySelector('.edit-user-form');
     if (editForm) {
         const passwordField = editForm.querySelector('[name="password"]');
@@ -51,9 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── Edit user form submission ──
+    // AJAX submit edit form and update UI accordingly
     editModal?.querySelector('.edit-user-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
+        // Sends the data that has been input in the form to the server
         fetch('/editUser', { method: 'POST', body: new FormData(this) })
             .then(r => r.json())
             .then(data => {

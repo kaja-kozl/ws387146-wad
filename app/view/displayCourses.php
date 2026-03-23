@@ -6,7 +6,7 @@ $currentUser = Application::$app->user;
 
 <link rel="stylesheet" href="/css/displayCourses.css">
 
-<!-- ── Course detail modal ── -->
+<!-- Course detail modal -->
 <div class="modal fade" id="course-modal" tabindex="-1"
     aria-labelledby="modal-title" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -124,7 +124,7 @@ $currentUser = Application::$app->user;
     </div>
 </div>
 
-<!-- ── Add Course modal ── -->
+<!-- Add Course modal -->
 <div class="modal fade" id="add-course-modal" tabindex="-1"
     aria-labelledby="add-course-title" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -169,11 +169,11 @@ $currentUser = Application::$app->user;
     </div>
 </div>
 
-<!-- ── Two-column layout ── -->
+<!-- Two-column layout -->
 <div class="courses-wrap">
 <div class="courses-layout">
 
-    <!-- Left: Your Activity -->
+    <!-- Left column: Your Activity -->
     <div class="col-activity" aria-label="Your course activity">
         <h2 class="section-heading">Your Activity</h2>
         <div id="user-activity">
@@ -252,30 +252,35 @@ $currentUser = Application::$app->user;
         </div>
     </div>
 
-    <!-- Right: Recently Added -->
+    <!-- Right column: Recently Added -->
     <div class="col-courses" aria-label="Recently added courses">
         <h2 class="section-heading">Recently Added</h2>
         <div id="active-courses">
+            <!-- Only displays courses if $activeCourses (rendered from courseController) is not empty -->
             <?php if (!empty($activeCourses)): ?>
             <div class="card-grid-wrap">
                 <div class="card-grid" id="courses-grid"
-                    data-per-page="<?= $cardsPerPage ?>"
+                    data-per-page="<?= 6 ?>"
                     role="list"
                     aria-label="Available courses">
-                    <?php foreach ($activeCourses as $i => $course):
+
+                    <!-- Iterates through all of the active courses and stores their attributes to display -->
+                    <?php foreach ($activeCourses as $card => $course):
                         $count      = $enrolledCounts[$course->uid] ?? 0;
                         $isLecturer = ($course->lecturer === $currentUser->uid);
                         $isEnrolled = isset($enrolledUidSet[$course->uid]);
                         $dateStr    = (new DateTime($course->startDate))->format('d M Y H:i');
                     ?>
-                    <div class="course-card<?= ($i >= $cardsPerPage) ? ' d-none' : '' ?>"
+
+                    <div class="course-card<?= ($card >= 6) ? ' d-none' : '' ?>"
                          data-uid="<?= htmlspecialchars($course->uid) ?>"
                          data-lecturer-uid="<?= htmlspecialchars($course->lecturer) ?>"
-                         data-index="<?= $i ?>"
+                         data-index="<?= $card ?>"
                          role="listitem"
                          aria-label="<?= htmlspecialchars($course->courseTitle) ?>">
                         <div class="card-body">
                             <div class="card-title">
+                                <!-- Opens a modal if the course title is clicked, with the uid of the course -->
                                 <button class="course-link" data-uid="<?= htmlspecialchars($course->uid) ?>"
                                     aria-label="View details for <?= htmlspecialchars($course->courseTitle) ?>">
                                     <?= htmlspecialchars($course->courseTitle) ?>
@@ -294,6 +299,9 @@ $currentUser = Application::$app->user;
                                 </span>
                             </div>
                         </div>
+                    <!-- Changes the card action button based on whether the user is the lecturer
+                            is enrolled on the course or neither
+                    -->
                         <div class="card-action">
                             <?php if ($isLecturer): ?>
                                 <button class="card-btn card-btn--owner" disabled
@@ -303,7 +311,7 @@ $currentUser = Application::$app->user;
                                 <button class="card-btn card-btn--unenrol unenroll-btn"
                                     data-uid="<?= htmlspecialchars($course->uid) ?>"
                                     aria-label="Unenroll from <?= htmlspecialchars($course->courseTitle) ?>">Unenroll</button>
-                            <?php else: ?>
+                            <?php else: ?> <!-- The enroll button is handled by onEnroll() in courses.js -->
                                 <button class="card-btn card-btn--enrol enroll-btn"
                                     data-uid="<?= htmlspecialchars($course->uid) ?>"
                                     aria-label="Sign up for <?= htmlspecialchars($course->courseTitle) ?>">Sign Up</button>
@@ -312,7 +320,7 @@ $currentUser = Application::$app->user;
                     </div>
                     <?php endforeach; ?>
                 </div>
-                <?php if (count($activeCourses) > $cardsPerPage): ?>
+                <?php if (count($activeCourses) > 6): ?>
                 <div class="pagination-bar pagination-bar--cards" role="navigation" aria-label="Courses pagination">
                     <button class="page-btn" id="courses-prev" aria-label="Previous courses page">&#9664;</button>
                     <span class="page-label" id="courses-page-label"

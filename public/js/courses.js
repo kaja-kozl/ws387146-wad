@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let current = null;
 
-    // ---- Fetch wrapper ----
+    // Fetch wrapper
     function post(url, fd) {
         return fetch(url, { method: 'POST', body: fd })
             .then(r => {
@@ -328,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return tr;
     }
 
+    // Renders the attendees of the course in the modal with necessary information
     function renderAttendees(attendees, allUsers, courseUid) {
         const tbody    = document.querySelector('#attendees-tbody');
         const dropdown = document.querySelector('#attendee-select');
@@ -351,9 +352,27 @@ document.addEventListener('DOMContentLoaded', () => {
             dropdown.appendChild(opt);
         });
         dropdown._users = allUsers;
+
+        // Disable/hide add attendee controls if at capacity
+        const isFull = current.enrolledCount >= current.maxAttendees;
+        const addBtn = document.querySelector('#add-attendee');
+        const addMessage = document.querySelector('#course-full-message') || document.createElement('div');
+
+        if (isFull) {
+            addBtn.style.display = 'none';
+            dropdown.style.display = 'none';
+        } else {
+            addBtn.style.display = '';
+            dropdown.style.display = '';
+            addBtn.disabled = false;
+            dropdown.disabled = false;
+            if (addMessage.parentNode) {
+                addMessage.remove();
+            }
+        }
     }
 
-    // ---- Add / remove attendee ----
+    // Add / remove attendee
     document.querySelector('#add-attendee').addEventListener('click', () => {
         const dropdown = document.querySelector('#attendee-select');
         const uid = dropdown.value;
@@ -370,12 +389,17 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('#attendees-tbody').appendChild(attendeeRow(data.attendee, current.uid));
             dropdown.querySelector(`option[value="${data.attendee.uid}"]`)?.remove();
             dropdown.value = '';
+            current.enrolledCount++;
+            if (current.enrolledCount >= current.maxAttendees) {
+                document.querySelector('#add-attendee').disabled = true;
+                document.querySelector('#attendee-select').disabled = true;
+            }
             if (data.enrolledCount !== undefined) updateCapacityBadges(current.uid, data.enrolledCount, current.maxAttendees);
         });
     });
 
     async function removeAttendee(uid, courseUid, row) {
-        if (!await grConfirm('Remove this attendee from the course?', 'Remove Attendee')) return;
+        if (!await confirm('Remove this attendee from the course?', 'Remove Attendee')) return;
 
         const fd = new FormData();
         fd.append('courseUid', courseUid);
@@ -401,6 +425,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 removeActivity(courseUid);
             }
 
+            current.enrolledCount--;
+            if (current.enrolledCount < current.maxAttendees) {
+                document.querySelector('#add-attendee').disabled = false;
+                document.querySelector('#attendee-select').disabled = false;
+            }
+
             if (data.enrolledCount !== undefined) updateCapacityBadges(courseUid, data.enrolledCount, current.maxAttendees);
 
             if (!document.querySelector('#attendees-tbody').children.length) {
@@ -409,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ---- Modal ----
+    // Courses Modal 
     function viewMode() {
         document.querySelector('#view-pane').style.display = '';
         document.querySelector('#edit-pane').style.display = 'none';
@@ -417,39 +447,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function editMode(course) {
         document.querySelector('#view-pane').style.display = 'none';
+        // Displays the edit pane from the HTML
         document.querySelector('#edit-pane').style.display = '';
-        document.querySelector('#edit-uid').value           = course.uid;
-        document.querySelector('#edit-title').value         = course.courseTitle;
-        document.querySelector('#edit-desc').value          = course.courseDesc;
-        document.querySelector('#edit-start').value         = course.startDate;
-        document.querySelector('#edit-end').value           = course.endDate;
-        document.querySelector('#edit-max').value           = course.maxAttendees;
-        document.querySelector('#edit-lecturer').value      = course.lecturerUid;
+        // Pre-fills the form with the current course details
+        document.querySelector('#edit-uid').value = course.uid;
+        document.querySelector('#edit-title').value = course.courseTitle;
+        document.querySelector('#edit-desc').value = course.courseDesc;
+        document.querySelector('#edit-start').value = course.startDate;
+        document.querySelector('#edit-end').value = course.endDate;
+        document.querySelector('#edit-end').min = course.startDate; // Ensure end date cannot be before start
+        document.querySelector('#edit-max').value = course.maxAttendees;
+        document.querySelector('#edit-lecturer').value = course.lecturerUid; // Read only for non-superusers
         document.querySelectorAll('#edit-form .invalid-feedback').forEach(el => el.textContent = '');
         document.querySelectorAll('#edit-form input, #edit-form select, #edit-form textarea')
             .forEach(el => el.classList.remove('invalid-input'));
     }
 
+    // Takes all the data from the openCourse function
     function renderCourse(course, isEnrolled, privileged, attendees, allUsers) {
         document.querySelector('#modal-title').textContent = course.courseTitle;
 
         const body    = document.querySelector('#modal-body');
         const isOwner = course.lecturerUid === currentUserUid;
+        // Identifies if the user can modify the course
         const canEdit = isOwner || currentUserLevel === 'super_user';
 
+        // Only displays certain buttons if the user has permissions
         body.innerHTML = '';
         document.querySelector('#edit-btn').style.display   = canEdit ? '' : 'none';
         document.querySelector('#delete-btn').style.display = canEdit ? '' : 'none';
         document.querySelector('#edit-btn').dataset.uid     = course.uid;
         document.querySelector('#delete-btn').dataset.uid   = course.uid;
 
+        // Enrol button displayed for everyone except the owner of the course
         const btn = document.querySelector('#enrol-btn');
         btn.style.display = isOwner ? 'none' : '';
         if (!isOwner) {
             btn.dataset.uid = course.uid;
-            setEnrolState(btn, isEnrolled);
+            if (current.enrolledCount >= course.maxAttendees) {
+                btn.disabled = true;
+                btn.textContent = 'Course Full';
+                btn.onclick = null;
+            } else {
+                setEnrolState(btn, isEnrolled);
+            }
         }
 
+        // Populating the different fields
         [['Description', course.courseDesc], ['Lecturer', course.lecturer],
          ['Start Date', course.startDate], ['End Date', course.endDate],
          ['Max Attendees', course.maxAttendees]
@@ -462,6 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
             body.appendChild(p);
         });
 
+        // A privileged user should be able to also see all the attendees using the renderAttendees() function
         if (privileged) {
             renderAttendees(attendees, allUsers, course.uid);
         } else {
@@ -475,8 +520,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.onclick     = () => isEnrolled ? unenrollModal(btn.dataset.uid) : enrollModal(btn.dataset.uid);
     }
 
-    // ---- Open course modal ----
+    // Open course modal
     function openCourse() {
+
+        // Creates a modal and it's buttons
         const uid = this.dataset.uid;
         document.querySelector('#modal-body').innerHTML = '<div class="modal-spinner"><div class="spinner-wheel"></div></div>';
         document.querySelector('#modal-title').textContent = 'Course Details';
@@ -485,14 +532,20 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector(s).style.display = 'none';
         });
         viewMode();
+
+        // Opens a course-modal modal (see displayCourses.php)
         new bootstrap.Modal(document.querySelector('#course-modal')).show();
 
+        // Fetches the course details and stores it in FormData (JS API)
         const fd = new FormData();
         fd.append('uid', uid);
 
+        // Fetches the course details from the server based on the UID of the selected course
         post('/viewCourse', fd).then(data => {
             if (data?.success) {
                 current = data.course;
+                current.enrolledCount = data.enrolledCount;
+                // Sends the modal with course details and attendees if the user has permissions to seperate function
                 renderCourse(current, data.isEnrolled, data.isPrivileged, data.attendees, data.allUsers);
             } else {
                 document.querySelector('#modal-body').innerHTML = '<p>Could not load course.</p>';
@@ -512,7 +565,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setEnrolState(document.querySelector('#enrol-btn'), true);
             syncEnrolBtn(uid, true);
             addActivity(current);
-            if (data.enrolledCount !== undefined) updateCapacityBadges(uid, data.enrolledCount, current.maxAttendees);
+            if (data.enrolledCount !== undefined) {
+                current.enrolledCount = data.enrolledCount;
+                updateCapacityBadges(uid, data.enrolledCount, current.maxAttendees);
+            }
         });
     }
 
@@ -525,25 +581,33 @@ document.addEventListener('DOMContentLoaded', () => {
             setEnrolState(document.querySelector('#enrol-btn'), false);
             syncEnrolBtn(uid, false);
             removeActivity(uid);
-            if (data.enrolledCount !== undefined) updateCapacityBadges(uid, data.enrolledCount, current.maxAttendees);
+            if (data.enrolledCount !== undefined) {
+                current.enrolledCount = data.enrolledCount;
+                updateCapacityBadges(uid, data.enrolledCount, current.maxAttendees);
+            }
         });
     }
 
+    // AJAX requests for enrol/unenrol buttons in course cards and activity table
     function onEnroll() {
         const uid  = this.dataset.uid;
         const btn  = this;
         const card = btn.closest('.course-card');
         const fd   = new FormData();
         fd.append('uid', uid);
+
+        // Sends the request to /enrollCourse and updates the button state + capacity badges on success
         post('/enrollCourse', fd).then(data => {
-            if (data?.flash) flash(data.flash.type, data.flash.message);
-            if (!data?.success) return;
+            if (data?.flash) flash(data.flash.type, data.flash.message); // Flash message
+            if (!data?.success) return; // Stop if enrolment failed
             btn.className   = 'card-btn card-btn--unenrol unenroll-btn';
-            btn.textContent = 'Unenroll';
+            btn.textContent = 'Unenroll'; // Makes the button look like an unenroll button
             btn.removeEventListener('click', onEnroll);
-            btn.addEventListener('click', onUnenroll);
-            const max = card?.querySelector('.capacity-badge')?.textContent.split('/')[1];
+            btn.addEventListener('click', onUnenroll); // Changes the event listeners to unenroll
+            const max = card?.querySelector('.capacity-badge')?.textContent.split('/')[1]; // Gets the max capacity from the badge to update it with the new enrolled count
             if (data.enrolledCount !== undefined) updateCapacityBadges(uid, data.enrolledCount, max);
+            
+            // Adds it to YourActivity
             if (card) addActivity({
                 uid:           card.dataset.uid,
                 lecturerUid:   card.dataset.lecturerUid,
@@ -574,34 +638,56 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ---- Edit ----
+    // Edit a course, event listener for changing modal view form
     document.querySelector('#edit-btn').addEventListener('click', () => {
         if (current) editMode(current);
     });
 
+    // Cancel button just turns it back to view mode without saving changes
     document.querySelector('#cancel-edit').addEventListener('click', viewMode);
 
+    // Update end date min when start date changes
+    document.querySelector('#edit-start').addEventListener('change', function() {
+        const startVal = this.value;
+        if (startVal) {
+            document.querySelector('#edit-end').min = startVal;
+        }
+    });
+
+    // AJAX request for submitting the edit form
     document.querySelector('#edit-form').addEventListener('submit', function(e) {
         e.preventDefault();
+        const startVal = document.querySelector('#edit-start').value;
+        const endVal = document.querySelector('#edit-end').value;
+        if (startVal && endVal) {
+            const start = new Date(startVal);
+            const end = new Date(endVal);
+            if (end <= start) {
+                showErrors(this, {endDate: ['End date must be after the start date.']});
+                return;
+            }
+        }
+        // Sends a POST request to editCourse with the data that is in the form
         post('/editCourse', new FormData(this)).then(data => {
-            if (data?.flash) flash(data.flash.type, data.flash.message);
-            if (data?.success) {
+            if (data?.flash) flash(data.flash.type, data.flash.message); // Sets a flash message
+            if (data?.success) { // Updates the course details on success and returns the view
                 current = data.course;
                 const isEnrolled = document.querySelector('#enrol-btn').textContent === 'Unenroll';
                 renderCourse(current, isEnrolled, true, [], document.querySelector('#attendee-select')._users || {});
                 viewMode();
-                syncRow(data.course);
+                syncRow(data.course); // Changes the course title in the activity table and card
                 bootstrap.Modal.getInstance(document.querySelector('#course-modal')).hide();
             } else if (data?.errors) {
+                // Otherwise, shows errors
                 showErrors(this, data.errors);
             }
         });
     });
 
-    // ---- Delete ----
+    // Delete a course, event listener for delete button in course modal
     document.querySelector('#delete-btn').addEventListener('click', async function() {
         const uid = this.dataset.uid;
-        if (!await grConfirm('This will permanently delete the course and remove all enrolments.', 'Delete Course')) return;
+        if (!await confirm('This will permanently delete the course and remove all enrolments.', 'Delete Course')) return;
         const fd = new FormData();
         fd.append('uid', uid);
         post('/deleteCourse', fd).then(data => {
@@ -609,6 +695,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data?.success) return;
             bootstrap.Modal.getInstance(document.querySelector('#course-modal')).hide();
             document.querySelectorAll(`tr[data-uid="${uid}"]`).forEach(r => r.remove());
+            document.querySelectorAll(`.course-card[data-uid="${uid}"]`).forEach(c => c.remove());
+            renderActivityPage();
+            renderCoursesPage();
         });
     });
 
@@ -618,6 +707,16 @@ document.addEventListener('DOMContentLoaded', () => {
         clearErrors(createForm);
         createForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            const startVal = document.querySelector('input[name="startDate"]').value;
+            const endVal = document.querySelector('input[name="endDate"]').value;
+            if (startVal && endVal) {
+                const start = new Date(startVal);
+                const end = new Date(endVal);
+                if (end <= start) {
+                    showErrors(this, {endDate: ['End date must be after the start date.']});
+                    return;
+                }
+            }
             post('/courses', new FormData(createForm)).then(data => {
                 if (data?.flash) flash(data.flash.type, data.flash.message);
                 if (data?.success) {
@@ -634,6 +733,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Set min on create form end date when start changes
+    document.querySelector('#add-course-modal').addEventListener('shown.bs.modal', function() {
+        const startInput = document.querySelector('input[name="startDate"]');
+        const endInput = document.querySelector('input[name="endDate"]');
+        if (startInput && endInput) {
+            startInput.addEventListener('change', function() {
+                endInput.min = this.value;
+            });
+        }
+    });
 
     document.querySelectorAll('.enroll-btn').forEach(el => el.addEventListener('click', onEnroll));
     document.querySelectorAll('.unenroll-btn').forEach(el => el.addEventListener('click', onUnenroll));
