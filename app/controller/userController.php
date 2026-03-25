@@ -11,11 +11,14 @@ use app\model\EditUserForm;
 
 class UserController extends Controller
 {
+    // Creates a user using the form and returns a JSON response with new data
     public function createUser(Request $request): void
     {
+        // Creates a new form object and loads the data from the AJAX request into it
         $userModel = new UserModel();
         $userModel->loadData($request->getBody());
 
+        // Validates the fields against Model rules and attempts to save it in the database
         if ($userModel->validate() && $userModel->save()) {
             $this->json([
                 'success' => true,
@@ -32,6 +35,7 @@ class UserController extends Controller
             return;
         }
 
+        // If validation/saving failed, return a JSON response with errors that include the users input failures
         $this->json([
             'success' => false,
             'flash'   => ['type' => 'danger', 'message' => 'Failed to create user'],
@@ -83,8 +87,10 @@ class UserController extends Controller
         ]);
     }
 
+    // Called by AJAX on the admin users page to fetch the list of users as JSON
     public function getUsers(Request $request, Response $response): void
     {
+        // Only admins and superusers can list users
         if (!PermissionsService::can('list', 'user')) {
             $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
@@ -105,6 +111,7 @@ class UserController extends Controller
         ]);
     }
 
+    // Deletes a user and reassigns their courses (if applicable) to the user who deleted them
     public function deleteUser(Request $request, Response $response): void
     {
         if (!$request->isPost()) {
@@ -112,6 +119,7 @@ class UserController extends Controller
             return;
         }
 
+        // Ensures that the UID is provided
         $uid = $request->getBody()['uid'] ?? null;
 
         if (!$uid || $uid === Application::$app->user->uid) {
@@ -119,11 +127,13 @@ class UserController extends Controller
             return;
         }
 
+        // Authorisation check to ensure that someone without permisisons isn't doing this
         if (!PermissionsService::can('delete', 'user')) {
             $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
         }
 
+        // Reassigns the courses to the user performing the deletion
         try {
             (new CourseModel())->reassignLecturer($uid, Application::$app->user->uid);
         } catch (\Exception $e) {
@@ -131,8 +141,10 @@ class UserController extends Controller
             return;
         }
 
+        // Deletes the user from the database
         $deleted = (new UserModel())->deleteUser($uid);
 
+        // Success message
         $this->json([
             'success' => $deleted,
             'flash'   => $deleted

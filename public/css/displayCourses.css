@@ -1,4 +1,4 @@
-/* ── Wrapper ─────────────────────────────────────────────────────── */
+/* Wrapper */
 .courses-wrap {
     background: #e8e9ed;
     border-radius: 10px;
@@ -11,7 +11,7 @@
     overflow: hidden;
 }
 
-/* ── Layout ─────────────────────────────────────────────────────── */
+/* Layout */
 .courses-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -62,7 +62,7 @@
     margin-bottom: 0.4rem;
 }
 
-/* ── Activity table ─────────────────────────────────────────────── */
+/* Activity table */
 .activity-wrap {
     border: 2px solid #1a1a2e;
     border-radius: 8px;
@@ -140,7 +140,7 @@
     white-space: nowrap;
 }
 
-/* ── Date states ────────────────────────────────────────────────── */
+/* Date states */
 .date-cell {
     font-size: 0.8rem;
     color: #555;
@@ -166,7 +166,7 @@
     text-transform: uppercase;
 }
 
-/* ── Course link ────────────────────────────────────────────────── */
+/* Course link */
 
 
 .course-link:hover {
@@ -180,7 +180,7 @@
     opacity: 0.35;
 }
 
-/* ── Capacity badge ─────────────────────────────────────────────── */
+/* Capacity badge */
 .capacity-badge {
     display: inline-block;
     background: #1a1a2e;
@@ -193,7 +193,7 @@
     white-space: nowrap;
 }
 
-/* ── Pagination bar ─────────────────────────────────────────────── */
+/* Pagination bar */
 .pagination-bar {
     display: flex;
     align-items: center;
@@ -258,7 +258,7 @@
     padding: 0.5rem 0 0;
 }
 
-/* ── Course cards ───────────────────────────────────────────────── */
+/* Course cards */
 .card-grid-wrap {
     border: 2px solid #1a1a2e;
     border-radius: 8px;
@@ -336,7 +336,7 @@
     padding: 0 0.9rem 0.75rem;
 }
 
-/* ── Card buttons ───────────────────────────────────────────────── */
+/* Card buttons */
 .card-btn {
     width: 100%;
     padding: 0.45rem;
@@ -370,7 +370,7 @@
     cursor: default;
 }
 
-/* ── Add Course button ──────────────────────────────────────────── */
+/* Add Course button */
 .add-course-btn {
     display: block;
     width: 100%;
@@ -392,7 +392,7 @@
     filter: brightness(0.92);
 }
 
-/* ── Empty states ───────────────────────────────────────────────── */
+/* Empty states */
 .empty-msg {
     font-size: 0.875rem;
     color: #888;
@@ -400,7 +400,7 @@
     padding: 0.5rem 0;
 }
 
-/* ── Modal ──────────────────────────────────────────────────────── */
+/* Modal */
 #course-modal .modal-header,
 #add-course-modal .modal-header {
     background: #1a1a2e;
@@ -445,7 +445,7 @@
     display: block;
 }
 
-/* ── Attendee table ─────────────────────────────────────────────── */
+/* Attendee table */
 #attendees h6 {
     font-size: 0.75rem;
     font-weight: 700;
@@ -498,7 +498,7 @@
 #attendees .table th:nth-child(4),
 #attendees .table td:nth-child(4) { width: 20%; }
 
-/* ── Validation ─────────────────────────────────────────────────── */
+/* ── Validation */
 .invalid-input {
     border: 1.5px solid #c0392b !important;
     background-color: #fff8f8 !important;
@@ -543,7 +543,7 @@
     display: none;
 }
 
-/* ── Flash ──────────────────────────────────────────────────────── */
+/* Flash */
 #course-form .alert {
     font-size: 0.875rem;
     padding: 0.5rem 0.9rem;
@@ -551,8 +551,7 @@
     margin-bottom: 0.75rem;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────── */
-/* ── Responsive ─────────────────────────────────────────────────── */
+/* Responsive */
 
 /* ~600px per column: two-column layout starts breaking — go single column */
 @media (max-width: 768px) {
@@ -618,7 +617,7 @@
         font-size: 0.85rem;
     }
 }
-/* ── Truncate long title text ───────────────────────────────────── */
+/* Truncate long title text */
 .activity-table td.title-cell {
     max-width: 0;
     overflow: hidden;
@@ -644,7 +643,7 @@
     text-align: left;
 }
 
-/* ── Filter toggle button in activity pagination ────────────────── */
+/* Filter toggle button in activity pagination */
 .filter-btn {
     margin-left: 0.5rem;
     font-size: 0.8rem;
@@ -660,7 +659,7 @@
     color: #fff;
 }
 
-/* ── Owned vs enrolled rows ─────────────────────────────────────── */
+/* ── Owned vs enrolled rows */
 .activity-table tbody tr[data-owned="1"] {
     background-color: #f0f4ff;
     border-left: 3px solid #1a6faf;
@@ -680,7 +679,7 @@
     display: none;
 }
 
-/* ── Activity placeholder rows (padding to fill fixed height) ───── */
+/* Activity placeholder rows (padding to fill fixed height) */
 .activity-table tbody tr.activity-placeholder {
     border-bottom: none;
     pointer-events: none;
@@ -694,7 +693,7 @@
     background: none;
 }
 
-/* ── Add Course / Edit Course modal form ────────────────────────── */
+/* Add Course / Edit Course modal form */
 #add-course-modal .modal-body,
 #course-modal .modal-body {
     padding: 1rem 1.25rem 0.5rem;
@@ -813,7 +812,7 @@
     border-radius: 5px;
 }
 
-/* ── Modal loading spinner ──────────────────────────────────────── */
+/* Modal loading spinner */
 .modal-spinner {
     display: flex;
     align-items: center;

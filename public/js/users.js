@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Trigger immediately if users tab is already active on page load
     if (usersTab?.classList.contains('active')) loadUsers();
 
-    // ── Build a table row for a user ──
+    // Build a table row for a user
     function buildUserRow(user) {
         const tr = document.createElement('tr');
         tr.dataset.uid = user.uid;

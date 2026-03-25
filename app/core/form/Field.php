@@ -3,7 +3,7 @@ namespace app\core\form;
 use app\core\Model;
 
 class Field {
-    # Lists types of fields
+    # Lists types of fields available
     public const TYPE_TEXT = 'text';
     public const TYPE_PASSWORD = 'password';
     public const TYPE_NUMBER = 'number';
@@ -25,6 +25,7 @@ class Field {
         $this->attribute = $attribute;
     }
 
+    // Renders the field as HTML based on its type and other properties
     public function __toString() {
         if ($this->type === self::TYPE_SELECT) {
             return $this->renderSelect();
@@ -35,12 +36,13 @@ class Field {
         return $this->renderInput();
     }
 
+    // Enables code to set a custom pre-filled in value
     public function setValue(string $value) {
         $this->value = $value;
         return $this;
     }
 
-    # Boilerplate for how the field is to be rendered on the page
+    // Boilerplate for how the field is to be rendered on the page
     private function renderInput() {
         $class = $this->model->hasError($this->attribute) ? 'invalid-input' : '';
         $value = $this->value ?? $this->model->{$this->attribute};
@@ -60,11 +62,12 @@ class Field {
             htmlspecialchars($this->attribute),
             htmlspecialchars($value),
             $class ? ' class="' . $class . '"' : '',
-            $this->readonly ? 'readonly' : '',  // Native HTML readonly for inputs
+            $this->readonly ? 'readonly' : '', 
             htmlspecialchars($this->model->getFirstError($this->attribute))
         );
     }
 
+    // Separate render method for textareas since they have different HTML structure and don't use the value attribute
     private function renderTextarea() {
         $class = $this->model->hasError($this->attribute) ? 'invalid-input' : '';
         $value = $this->value ?? $this->model->{$this->attribute};
@@ -88,6 +91,7 @@ class Field {
         );
     }
 
+    // Separate render method for select dropdowns since they have different HTML structure and need to loop through options)
     private function renderSelect() {
         $currentValue = $this->value ?? $this->model->{$this->attribute};
 
@@ -147,7 +151,7 @@ class Field {
         );
     }
 
-    # If fields required are of a different, call this when creating the form
+    // If fields required are of a different, call this when creating the form
     public function textareaField() {
         $this->type = self::TYPE_TEXTAREA;
         return $this;

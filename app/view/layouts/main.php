@@ -17,7 +17,7 @@ use app\core\Application;
 
 <body class="d-flex flex-column min-vh-100">
 
-    <!-- ── Navbar ── -->
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark site-navbar" aria-label="Main navigation">
         <div class="container-fluid px-4">
 
@@ -76,12 +76,12 @@ use app\core\Application;
         </div>
     <?php endif; ?>
 
-    <!-- ── Page content ── -->
+    <!-- Page content -->
     <main class="flex-grow-1" id="main-content">
         {{content}}
     </main>
 
-    <!-- ── Footer ── -->
+    <!-- Footer -->
     <footer class="site-footer" aria-label="Site footer">
         <div class="footer-inner">
             <p class="footer-copy">&copy; <?= date('Y') ?> GrayRock | All Rights Reserved</p>

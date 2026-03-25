@@ -1,4 +1,4 @@
-/* ── Page wrapper ───────────────────────────────────────────────── */
+/*  Page wrapper  */
 .users-wrap {
     background: #e8e9ed;
     border-radius: 10px;
@@ -11,7 +11,7 @@
     overflow: hidden;
 }
 
-/* ── Tabs ───────────────────────────────────────────────────────── */
+/*  Tabs  */
 .nav-tabs {
     border-bottom: 2px solid #c5c7ce;
     flex-shrink: 0;
@@ -43,7 +43,7 @@
     background: none;
 }
 
-/* ── Tab content fills remaining space ──────────────────────────── */
+/*  Tab content fills remaining space  */
 .tab-content-fill {
     flex: 1;
     min-height: 0;
@@ -60,20 +60,20 @@
     display: flex;
 }
 
-/* ── Other Users tab pane padding ───────────────────────────────── */
+/*  Other Users tab pane padding  */
 #users.tab-pane-fill {
     padding: 0 0 0.5rem;
     overflow: hidden;
 }
 
-/* ── Your Profile tab — centred ─────────────────────────────────── */
+/*  Your Profile tab — centred  */
 .profile-tab-pane {
     align-items: center;
     justify-content: center;
     overflow: hidden;
 }
 
-/* ── Profile card ───────────────────────────────────────────────── */
+/*  Profile card  */
 .profile-card {
     background: #fff;
     border: 2px solid #1a1a2e;
@@ -129,7 +129,7 @@
     color: #fff;
 }
 
-/* ── Other Users tab ────────────────────────────────────────────── */
+/*  Other Users tab  */
 .users-tab-header {
     display: flex;
     align-items: center;
@@ -179,7 +179,7 @@
     background-color: #cf8e18;
 }
 
-/* ── Users table ────────────────────────────────────────────────── */
+/*  Users table  */
 .users-table-wrap {
     background: #fff;
     border: 2px solid #1a1a2e;
@@ -281,7 +281,7 @@
     color: #fff;
 }
 
-/* ── Shared modal styling ───────────────────────────────────────── */
+/*  Shared modal styling  */
 .modal-header {
     background-color: #1a1a2e;
     color: #fff;
@@ -364,7 +364,7 @@
     background-color: #cf8e18;
 }
 
-/* ── Validation ─────────────────────────────────────────────────── */
+/*  Validation  */
 .invalid-input {
     border: 1.5px solid #c0392b !important;
     background-color: #fff8f8 !important;
@@ -409,8 +409,8 @@
     display: none;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────── */
-/* ── Responsive: hide columns progressively, stack dropped data ─── */
+/*  Responsive  */
+/*  Responsive: hide columns progressively, stack dropped data  */
 
 /* ~820px: ID column starts getting cramped — hide it */
 @media (max-width: 820px) {
@@ -482,7 +482,7 @@
     }
 }
 
-/* ── Users pagination bar ───────────────────────────────────────── */
+/*  Users pagination bar  */
 .users-pagination {
     display: flex;
     align-items: center;

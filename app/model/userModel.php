@@ -66,6 +66,7 @@ class UserModel extends User
         ];
     }
 
+    // Hashes the password before saving the user to the database
     public function save(): bool
     {
         $this->password = password_hash($this->password, PASSWORD_BCRYPT);
@@ -82,6 +83,7 @@ class UserModel extends User
         );
     }
 
+    // Reads every lecturer's UID, firstName and lastName and returns it in a format for dropdowns (same as above but only for lecturers)
     public function getAllLecturers(): array
     {
         $users = $this->readRaw(
@@ -95,31 +97,37 @@ class UserModel extends User
         return $lecturers;
     }
 
+    // Deletes a user by UID, returns true if successful
     public function deleteUser(string $uid): bool
     {
         return $this->delete(['uid = :uid'], [':uid' => $uid]);
     }
 
+    // Updates a user's details by UID
     public function updateUser(): bool
     {
         $fields = ['email', 'firstName', 'lastName', 'jobTitle', 'accessLevel'];
         $set    = [];
         $params = [];
 
+        // Dynamically build the SET clause and parameters for the update query based on the fields that are being updated
         foreach ($fields as $field) {
-            $set[]             = "$field = :$field";
+            $set[] = "$field = :$field";
             $params[":$field"] = $this->$field;
         }
 
+        // Only update the password if it's not empty and not the placeholder value, and hash it before saving
         if (!empty($this->password) && $this->password !== 'Password') {
-            $set[]               = 'password = :password';
+            $set[] = 'password = :password';
             $params[':password'] = password_hash($this->password, PASSWORD_DEFAULT);
         }
 
+        // Add the UID to the parameters for the WHERE clause
         $params[':uid'] = $this->uid;
         return $this->update($set, $params, 'uid = :uid');
     }
 
+    // Returns the user's full name for display purposes
     public function getDisplayName(): string
     {
         return $this->firstName . ' ' . $this->lastName;

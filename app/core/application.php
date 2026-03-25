@@ -7,10 +7,10 @@ use app\model\UserModel;
 
 class Application
 {
-    # All properities that need to be globally accessible from the application
+    // All properities that need to be globally accessible from the application
     public static string $ROOT_DIR;
 
-    public string $userClass; # This is included as a string since it is outside of the core folder
+    public string $userClass; // This is included as a string since it is outside of the core folder
     public string $layout = 'main';
     public Router $router;
     public Request $request;
@@ -19,9 +19,11 @@ class Application
     public Database $db;
     public static ?Application $app = null;
     public ?Controller $controller = null;
-    public ?UserModel $user; # ? suggests that this attribute may be NULL3
+    public ?UserModel $user; // ? suggests that this attribute may be NULL3
     public View $view;
 
+    // This constructor is called in the index.php file to initialize the application
+    // Stores all necessary properties and creates the database connection to be accessible globally
     public function __construct($rootPath, array $config = []) {
         $this->userClass = $config['userClass'];
     
@@ -35,8 +37,8 @@ class Application
 
         $this->db = new Database($config['db']);
 
-        # This stores the User class with the appopriate object if the user has logged in
-        # User should be fetchable when navigating through pages
+        // This stores the User class with the appopriate object if the user has logged in
+        // User should be fetchable when navigating through pages
         $primaryValue = $this->session->get('user');
         if ($primaryValue) {
             $primaryKey = $this->userClass::primaryKey();
@@ -46,14 +48,15 @@ class Application
         }
     }
 
+    // Returns true if the user is not logged in
     public static function isGuest() {
         return !self::$app->user;
     }
     
-    # Resolves the current request and sends back the response
+    // Resolves the current request and sends back the response
     public function run()
     {
-        # If this fails, send the error code to the _error page
+        // If this fails, send the error code to the _error page
         try {
             echo $this->router->resolve();
         } catch (\Exception $e) {
@@ -74,7 +77,7 @@ class Application
         $this->controller = $controller;
     }
 
-    # Saving the user in the session attribute
+    // Saving the user in the session attribute
     public function login(UserModel $user): bool
     {
         $this->user = $user;

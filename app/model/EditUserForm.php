@@ -36,7 +36,7 @@ class EditUserForm extends Model {
         return $rules;
     }
 
-    # Updates the user sending them to the UserModel function if all else checks out
+    // Updates the user sending them to the UserModel function if all else checks out
     public function save(): bool
     {
         $userModel = new UserModel();

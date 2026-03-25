@@ -1,4 +1,4 @@
-/* ── Background ─────────────────────────────────────────────────── */
+/*  Background  */
 html, body {
     height: 100%;
     overflow: hidden;
@@ -21,7 +21,7 @@ body {
     flex-direction: column;
 }
 
-/* ── Navbar ─────────────────────────────────────────────────────── */
+/*  Navbar  */
 .site-navbar {
     background-color: #0d1b2e;
     padding: 0.5rem 0;
@@ -76,7 +76,7 @@ body {
     color: #ffffff;
 }
 
-/* ── Footer ─────────────────────────────────────────────────────── */
+/*  Footer  */
 .site-footer {
     background-color: #0d1b2e;
     padding: 1rem 0;
@@ -113,7 +113,7 @@ body {
     color: #ffffff;
 }
 
-/* ── Content area fills remaining viewport between navbar and footer ── */
+/*  Content area fills remaining viewport between navbar and footer  */
 main {
     flex: 1;
     overflow: hidden;
@@ -122,7 +122,7 @@ main {
     min-height: 0;
 }
 
-/* ── Flash messages (fixed overlay, never push content) ─────────── */
+/*  Flash messages (fixed overlay, never push content)  */
 .alert {
     position: fixed !important;
     top: 1.25rem;
@@ -206,7 +206,7 @@ main {
     opacity: 0.7;
 }
 
-/* ── Custom confirm dialog ──────────────────────────────────────── */
+/*  Custom confirm dialog  */
 .confirm-modal-content {
     border: none;
     border-radius: 8px;
@@ -278,7 +278,7 @@ main {
     background: #cf8e18;
 }
 
-/* ── Confirm dialog ─────────────────────────────────────────────── */
+/*  Confirm dialog  */
 .confirm-modal-content {
     border: none;
     border-radius: 8px;

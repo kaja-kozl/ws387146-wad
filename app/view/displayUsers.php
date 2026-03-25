@@ -155,6 +155,8 @@ $currentUser = Application::$app->user;
                     'aria-label' => 'Create new user',
                     'novalidate' => 'novalidate',
                 ]);
+                ?>
+                <?php
                 echo $form->field($newUser, 'email');
                 echo $form->field($newUser, 'password')->passwordField();
                 echo $form->field($newUser, 'confirmPassword')->passwordField();
@@ -178,13 +180,13 @@ $currentUser = Application::$app->user;
 
 <script>
     window.GR = <?= json_encode([
-        'currentUserUid'  => $currentUser->uid,
+        'currentUserUid' => $currentUser->uid,
         'currentUserData' => [
-            'uid'         => $currentUser->uid,
-            'email'       => $currentUser->email,
-            'firstName'   => $currentUser->firstName,
-            'lastName'    => $currentUser->lastName,
-            'jobTitle'    => $currentUser->jobTitle,
+            'uid' => $currentUser->uid,
+            'email' => $currentUser->email,
+            'firstName' => $currentUser->firstName,
+            'lastName' => $currentUser->lastName,
+            'jobTitle' => $currentUser->jobTitle,
             'accessLevel' => $currentUser->accessLevel,
         ]
     ]) ?>;

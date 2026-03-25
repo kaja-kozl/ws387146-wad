@@ -14,6 +14,7 @@
 
 <main>
     <?php
+    // Determine the error code, message, and type of error to customize the display accordingly
         $code    = $exception->getCode() ?: 500;
         $message = $exception->getMessage();
         $is404   = ($code === 404);

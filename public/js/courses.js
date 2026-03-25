@@ -398,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // AJAX function to remove an attendee as an admin from a course
     async function removeAttendee(uid, courseUid, row) {
         if (!await confirm('Remove this attendee from the course?', 'Remove Attendee')) return;
 
@@ -405,10 +406,13 @@ document.addEventListener('DOMContentLoaded', () => {
         fd.append('courseUid', courseUid);
         fd.append('userUid', uid);
 
+        // Post to controller method
         post('/removeAttendee', fd).then(data => {
+            // Set flash message
             if (data?.flash) flash(data.flash.type, data.flash.message);
             if (!data?.success) return;
 
+            // Remove the row from attendee select
             row.remove();
 
             const dropdown = document.querySelector('#attendee-select');
@@ -419,13 +423,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 dropdown.appendChild(opt);
             }
 
+            // Changes enroll button if necessary
             if (uid === currentUserUid) {
                 setEnrolState(document.querySelector('#enrol-btn'), false);
                 syncEnrolBtn(courseUid, false);
                 removeActivity(courseUid);
             }
 
+            // This needs to update asynchronously
             current.enrolledCount--;
+            if (data.enrolledCount !== undefined) updateCapacityBadges(courseUid, current.enrolledCount, current.maxAttendees);
+
             if (current.enrolledCount < current.maxAttendees) {
                 document.querySelector('#add-attendee').disabled = false;
                 document.querySelector('#attendee-select').disabled = false;

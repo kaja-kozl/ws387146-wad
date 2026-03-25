@@ -13,12 +13,14 @@ class CourseController extends Controller
 {
     public function __construct()
     {
+        // APIs are only accessible to authenticated users
         $this->registerMiddleware(new AuthMiddleware([
             'listCourses', 'viewCourse', 'addCourse', 'editCourse', 'deleteCourse',
             'enrollCourse', 'unenrollCourse', 'addAttendee', 'removeAttendee'
         ]));
     }
 
+    // Turns a CourseModel into an array for JSON handling
     private function serializeCourse(CourseModel $course, string $lecturerName): array
     {
         return [
@@ -33,6 +35,7 @@ class CourseController extends Controller
         ];
     }
 
+    // Resolves a lecturer's UID to their full name for display purposes
     private function resolveLecturerName(string $lecturerUid): string
     {
         $user = (new UserModel())->findOne(['uid' => $lecturerUid]);
@@ -131,7 +134,7 @@ class CourseController extends Controller
         // Returns how many users have already enrolled onto the course
         $enrolledCount = $enrollmentModel->getEnrolledCountByCourse([$uid])[$uid] ?? 0;
 
-       // Gets extra information of the attendees if necessary 
+       // Gets extra information of the attendees if the user has permissions to view them 
         if ($canViewAttendees) {
             $userModel = new UserModel();
             foreach ($enrollmentModel->getEnrolledUsers($uid) as $user) {
@@ -156,8 +159,10 @@ class CourseController extends Controller
         ]);
     }
 
+    // Updates the course details in the database and returns a success/failure response
     public function editCourse(Request $request): void
     {
+        // Checks that a valid ID is provided
         $body = $request->getBody();
         $uid  = $body['uid'] ?? null;
 
@@ -166,6 +171,7 @@ class CourseController extends Controller
             return;
         }
 
+        // Checks that that course exists
         $courseModel = new CourseModel();
         $course      = $courseModel->findOne(['uid' => $uid]);
 
@@ -174,15 +180,19 @@ class CourseController extends Controller
             return;
         }
 
+        // Checks the permissions of the user
         $currentUser = Application::$app->user;
         if (!PermissionsService::can('manage_attendees', 'course', $currentUser, $course)) {
             $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
         }
 
+        // Loads the new data into the model
         $course->loadData($body);
 
+        // Validates that all rules are successfully applied and attempts to update the course in the database
         if ($course->validate() && $course->updateCourse()) {
+            // Return response messages to the AJAX handler
             $this->json([
                 'success' => true,
                 'flash'   => ['type' => 'success', 'message' => 'Course successfully updated.'],
@@ -191,6 +201,7 @@ class CourseController extends Controller
             return;
         }
 
+        // If validation or update fails, return error messages to the AJAX handler
         $this->json([
             'success' => false,
             'flash'   => ['type' => 'danger', 'message' => 'Failed to update course.'],
@@ -236,14 +247,19 @@ class CourseController extends Controller
         ]);
     }
 
+    // Adds a new course to the database and returns a success/failure response
     public function addCourse(Request $request): void
     {
         $courseModel = new CourseModel();
+
+        // Gets all the data from the request and loads it into the model
         $courseModel->loadData($request->getBody());
 
+        // Validates that all rules are successfully applied and attempts to save the new course to the database
         if ($courseModel->validate() && $courseModel->save()) {
             $course = $this->serializeCourse($courseModel, $this->resolveLecturerName($courseModel->lecturer));
             $course['enrolledCount'] = 0;
+            // Response for the AJAX handler to show success message and add the new course to the listing without a page refresh
             $this->json([
                 'success' => true,
                 'flash'   => ['type' => 'success', 'message' => 'Course successfully created.'],
@@ -252,6 +268,7 @@ class CourseController extends Controller
             return;
         }
 
+        // If validation or saving fails, return error messages to the AJAX handler
         $this->json([
             'success' => false,
             'flash'   => ['type' => 'danger', 'message' => 'Failed to create course.'],
@@ -312,8 +329,10 @@ class CourseController extends Controller
         ]);
     }
 
+    // Unenrolls the user from a course (unenroll button)
     public function unenrollCourse(Request $request): void
     {
+        // Error checking to ensure the courseID and UID exists
         $uid         = $request->getBody()['uid'] ?? null;
         $currentUser = Application::$app->user;
 
@@ -322,8 +341,10 @@ class CourseController extends Controller
             return;
         }
 
+        // Uses the EnrollmentModel to remove the record from the database
         $unenrolled = (new EnrollmentModel())->unenroll($currentUser->uid, $uid);
 
+        // Returns response and updates the enrolled count asynchronously
         $this->json([
             'success' => $unenrolled,
             'flash'   => $unenrolled
@@ -333,8 +354,10 @@ class CourseController extends Controller
         ]);
     }
 
+    // Unenrolls an attendee from a course (remove attendee button in attendees modal)
     public function removeAttendee(Request $request): void
     {
+        // Error checking, ensuring that the user and course exists
         $body        = $request->getBody();
         $courseUid   = $body['courseUid'] ?? null;
         $userUid     = $body['userUid']   ?? null;
@@ -345,6 +368,7 @@ class CourseController extends Controller
             return;
         }
 
+        // Authorisation check to ensure the user has permissions
         $course    = (new CourseModel())->findOne(['uid' => $courseUid]);
         $canRemove = $course && (
             PermissionsService::can('manage_attendees', 'course', $currentUser, $course) ||
@@ -356,8 +380,10 @@ class CourseController extends Controller
             return;
         }
 
+        // Uses the EnrollmentModel to remove the attendee from the course
         $removed = (new EnrollmentModel())->unenroll($userUid, $courseUid);
 
+        // Returns response and updates the enrolled count asynchronously
         $this->json([
             'success' => $removed,
             'flash'   => $removed
@@ -366,8 +392,10 @@ class CourseController extends Controller
         ]);
     }
 
+    // Adds an attendee to a course (add attendee button in attendees modal)
     public function addAttendee(Request $request): void
     {
+        // Error checking, ensuring that the user and course exists
         $body        = $request->getBody();
         $courseUid   = $body['courseUid'] ?? null;
         $userUid     = $body['userUid']   ?? null;
@@ -385,11 +413,14 @@ class CourseController extends Controller
             return;
         }
 
+        // Authorisation check to ensure the user has permissions to add attendees to the course
         if (!PermissionsService::can('edit', 'course', $currentUser, $course)) {
             $this->json(['success' => false, 'error' => 'Unauthorised.'], 403);
             return;
         }
 
+        // Uses the EnrollmentModel to add the attendee to the course
+        // with error handling for edge cases such as max capacity and already enrolled
         $enrollmentModel = new EnrollmentModel();
 
         $currentEnrolled = $enrollmentModel->getEnrolledCountByCourse([$courseUid])[$courseUid] ?? 0;
@@ -403,9 +434,11 @@ class CourseController extends Controller
             return;
         }
 
+        // Enrolls the user onto the course and returns a response to update the attendees list and enrolled count asynchronously
         $enrolled = $enrollmentModel->enroll($userUid, $courseUid);
         $user     = (new UserModel())->findOne(['uid' => $userUid]);
 
+        // Success response includes the new attendee's details to update the attendees list asynchronously
         $this->json([
             'success'  => $enrolled,
             'flash'    => $enrolled

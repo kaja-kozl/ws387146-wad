@@ -70,7 +70,8 @@ class UserModelTest extends TestCase
         $this->assertSame(' ', $user->getDisplayName());
     }
 
-    // password complexity tests - testing each rule individually
+    // TC13 VALIDATION TESTS
+    // password field tests
     public function test_password_with_no_uppercase_fails(): void
     {
         $user = $this->makeValidUser();

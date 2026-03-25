@@ -7,11 +7,13 @@ class Database {
     private array $config;
     public \PDO $pdo;
 
+    // Load configuration from .env file
     public function __construct(array $config) {
         $this->config = $config;
         $this->connect();
     }
 
+    // Reconnect if the connection is lost
     private function connect(): void {
         $dsn = 'mysql:host=' . $this->config['servername'] .
                ';port=3306;dbname=' . $this->config['db_name'] .
@@ -21,6 +23,7 @@ class Database {
             $dsn,
             $this->config['username'],
             $this->config['password'],
+            // Set PDO options for error handling and performance
             [
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
                 \PDO::ATTR_EMULATE_PREPARES => false,
@@ -29,6 +32,7 @@ class Database {
         );
     }
 
+    // Prepare a SQL statement with automatic reconnection on failure
     public function prepare(string $sql) {
         try {
             return $this->pdo->prepare($sql);
